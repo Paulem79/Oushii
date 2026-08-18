@@ -1,6 +1,6 @@
 package net.paulem.mixin;
 
-import net.paulem.FastExplosionEngine;
+import net.paulem.ExplosionClusterManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -24,10 +24,28 @@ public abstract class PrimedTntMixin extends Entity {
 	private void onTick(CallbackInfo ci) {
 		if (this.level().isClientSide()) return;
 
-		if (((PrimedTnt) (Object) this).getFuse() <= 1) {
-			this.discard();
+		PrimedTnt self = (PrimedTnt) (Object) this;
+
+		// Short-circuit resting TNT to bypass entity physics calculations entirely
+		if (self.onGround() && self.getDeltaMovement().lengthSqr() < 1.0E-4) {
+			int newFuse = self.getFuse() - 1;
+			self.setFuse(newFuse);
+
+			if (newFuse <= 1) {
+				self.discard();
+				if (this.level() instanceof ServerLevel serverLevel) {
+					ExplosionClusterManager.enqueue(serverLevel, self.position(), explosionPower);
+				}
+			}
+			ci.cancel();
+			return;
+		}
+
+		// Intercept detonation tick and hand off to cluster manager instead of running vanilla Level#explode
+		if (self.getFuse() <= 1) {
+			self.discard();
 			if (this.level() instanceof ServerLevel serverLevel) {
-				FastExplosionEngine.explode(serverLevel, this.position(), explosionPower);
+				ExplosionClusterManager.enqueue(serverLevel, self.position(), explosionPower);
 			}
 			ci.cancel();
 		}

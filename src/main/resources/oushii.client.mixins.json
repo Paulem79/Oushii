@@ -1,11 +1,9 @@
 {
   "required": true,
-  "package": "net.paulem.mixin",
+  "package": "net.paulem.mixin.client",
   "compatibilityLevel": "${java}",
   "mixins": [
-    "PrimedTntMixin",
-    "EntityMixin",
-    "ServerLevelTickMixin"
+    "ClientLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

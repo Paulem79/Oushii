@@ -20,7 +20,11 @@
     ]
   },
   "mixins": [
-    "oushii.mixins.json"
+    "oushii.mixins.json",
+    {
+      "config": "oushii.client.mixins.json",
+      "environment": "client"
+    }
   ],
   "accessWidener": "oushii.ct",
   "depends": {

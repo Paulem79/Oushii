@@ -31,24 +31,21 @@ public final class FastExplosionEngine {
     private FastExplosionEngine() {
     }
 
+    // Prevents entity-spawning cascades from choking the server thread
     private static final int MAX_PRIMED_PER_EXPLOSION = 32;
 
-    /**
-     * Bruit 3D déterministe très rapide.
-     *
-     * Retourne une valeur comprise entre -0.75 et +0.75.
-     *
-     * Aucune allocation.
-     */
-    private static double fastNoise(int x, int y, int z) {
-        int h = x * 374761393
-                + y * 668265263
-                + z * 2147483647;
-
+    // Cheap, deterministic PRNG noise to give blast edges a rough shape without Perlin overhead
+    private static double fastNoise(int x, int y, int z, int seed) {
+        int h = x * 374761393 + y * 668265263 + z * 2147483647 + seed * 1442968193;
         h = (h ^ (h >>> 13)) * 1274126177;
         h ^= h >>> 16;
+        return ((h & 0xFFFF) / 65535.0 - 0.5) * 2.0;
+    }
 
-        return ((h & 0xFFFF) / 65535.0 - 0.5) * 1.5;
+    private static double multiScaleNoise(int x, int y, int z, int seed) {
+        double macro = fastNoise(x >> 2, y >> 2, z >> 2, seed) * 0.8;
+        double micro = fastNoise(x, y, z, seed ^ 0x5F3759DF) * 0.3;
+        return macro + micro;
     }
 
     public static void explode(ServerLevel level, Vec3 pos, float power) {
@@ -58,6 +55,7 @@ public final class FastExplosionEngine {
 
         RandomSource random = level.getRandom();
 
+        // Broadcast directly to client to bypass vanilla Explosion packet payload bloat
         level.playSound(
                 null,
                 pos.x,
@@ -81,16 +79,17 @@ public final class FastExplosionEngine {
                 0.0
         );
 
-        /*
-         * Le bruit peut ajouter jusqu'à +/- 0.75 bloc.
-         * On utilise donc ce rayon pour déterminer les candidats.
-         */
-        final float maxRadius = power + 0.75f;
+        // Standard MC mechanic: submerged explosions don't break blocks
+        final BlockPos centerPos = BlockPos.containing(pos);
+        final boolean isSubmerged = !level.getFluidState(centerPos).isEmpty();
+
+        final int seed = centerPos.hashCode();
+        final float maxNoiseOffset = 1.10f;
+        final float maxRadius = power + maxNoiseOffset;
         final double maxRadiusSq = maxRadius * maxRadius;
 
         final int minX = (int) Math.floor(pos.x - maxRadius);
         final int maxX = (int) Math.ceil(pos.x + maxRadius);
-
         final int minZ = (int) Math.floor(pos.z - maxRadius);
         final int maxZ = (int) Math.ceil(pos.z + maxRadius);
 
@@ -102,76 +101,37 @@ public final class FastExplosionEngine {
         final int levelMaxY = level.getMaxBuildHeight();
         *///?}
 
-        final int minY = Math.max(
-                levelMinY,
-                (int) Math.floor(pos.y - maxRadius)
-        );
+        final int minY = Math.max(levelMinY, (int) Math.floor(pos.y - maxRadius));
+        final int maxY = Math.min(levelMaxY, (int) Math.ceil(pos.y + maxRadius));
 
-        final int maxY = Math.min(
-                levelMaxY,
-                (int) Math.ceil(pos.y + maxRadius)
-        );
-
+        // Version-agnostic dummy context for Entity#ignoreExplosion checks
         //? if >1.21.2 {
         final ServerExplosion explosionContext = new ServerExplosion(
-                level,
-                null,
-                null,
-                null,
-                pos,
-                power,
-                false,
-                net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
+                level, null, null, null, pos, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
         );
         //?} else {
         /*
         final Explosion explosionContext = new Explosion(
-                level,
-                null,
-                pos.x,
-                pos.y,
-                pos.z,
-                power,
-                false,
-                net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
+                level, null, pos.x, pos.y, pos.z, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
         );
         */
         //?}
 
-        /*
-         * On utilise le rayon réel de l'explosion pour les entités,
-         * pas le rayon augmenté par le bruit.
-         */
         final double entityRadiusSq = (double) power * power;
 
         final AABB explosionBox = new AABB(
-                pos.x - power,
-                pos.y - power,
-                pos.z - power,
-                pos.x + power,
-                pos.y + power,
-                pos.z + power
+                pos.x - power, pos.y - power, pos.z - power,
+                pos.x + power, pos.y + power, pos.z + power
         );
 
-        final List<Entity> entities = level.getEntities(
-                (Entity) null,
-                explosionBox,
-                Entity::isAlive
-        );
-
-        final DamageSource damageSource =
-                level.damageSources().explosion(null, null);
+        final List<Entity> entities = level.getEntities((Entity) null, explosionBox, Entity::isAlive);
+        final DamageSource damageSource = level.damageSources().explosion(null, null);
 
         for (Entity entity : entities) {
-            if (entity.ignoreExplosion(explosionContext)) {
-                continue;
-            }
+            if (entity.ignoreExplosion(explosionContext)) continue;
 
             final double distSq = entity.distanceToSqr(pos);
-
-            if (distSq > entityRadiusSq) {
-                continue;
-            }
+            if (distSq > entityRadiusSq) continue;
 
             final double dist = Math.sqrt(distSq);
             final double impact = Math.max(0.0, 1.0 - (dist / power));
@@ -185,67 +145,47 @@ public final class FastExplosionEngine {
 
             if (lengthSq > 0.0) {
                 final double invLength = 1.0 / Math.sqrt(lengthSq);
-
                 final double dirX = dx * invLength;
                 final double dirY = dy * invLength;
                 final double dirZ = dz * invLength;
 
-                final double speed = Math.min(
-                        1.0,
-                        impact * 1.2
-                );
+                final double speed;
+                final double yBoost;
 
-                entity.push(
-                        dirX * speed,
-                        dirY * speed + (0.25 * impact),
-                        dirZ * speed
-                );
+                if (entity instanceof PrimedTnt) {
+                    // Yeet existing primed TNT without recalculating/resetting fuse
+                    speed = impact * (power * 0.40 + 0.6);
+                    yBoost = 0.20 + (impact * 0.30);
+                } else {
+                    speed = Math.min(1.0, impact * 1.2);
+                    yBoost = 0.25 * impact;
+                }
+
+                entity.push(dirX * speed, dirY * speed + yBoost, dirZ * speed);
             }
 
-            if (entity instanceof PrimedTnt tnt) {
-                final int currentFuse = tnt.getFuse();
-
-                final int newFuse =
-                        random.nextInt(Math.max(1, currentFuse / 4))
-                                + currentFuse / 8;
-
-                if (currentFuse > newFuse) {
-                    tnt.setFuse(newFuse);
-                }
-            } else {
-                final float damage = (float) (
-                        (impact * impact + impact)
-                                / 2.0
-                                * 7.0
-                                * power
-                                + 1.0
-                );
-
+            if (!(entity instanceof PrimedTnt)) {
+                final float damage = (float) ((impact * impact + impact) / 2.0 * 7.0 * power + 1.0);
                 entity.hurt(damageSource, damage);
             }
         }
 
-        final Object2IntOpenHashMap<Item> itemDrops =
-                new Object2IntOpenHashMap<>();
+        if (isSubmerged) {
+            return;
+        }
 
-        final BlockPos.MutableBlockPos mutablePos =
-                new BlockPos.MutableBlockPos();
+        final Object2IntOpenHashMap<Item> itemDrops = new Object2IntOpenHashMap<>();
+        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+        final BlockPos.MutableBlockPos neighborPos = new BlockPos.MutableBlockPos();
 
-        final BlockPos.MutableBlockPos neighborPos =
-                new BlockPos.MutableBlockPos();
-
-        final LootParams.Builder lootBuilder =
-                new LootParams.Builder(level)
-                        .withParameter(
-                                LootContextParams.TOOL,
-                                ItemStack.EMPTY
-                        );
+        final LootParams.Builder lootBuilder = new LootParams.Builder(level)
+                .withParameter(LootContextParams.TOOL, ItemStack.EMPTY);
 
         int spawnedTntCount = 0;
 
+        // Iterate directly over Chunk -> Section palette to bypass expensive level.getBlockState() calls
         final int minChunkX = minX >> 4;
         final int maxChunkX = maxX >> 4;
-
         final int minChunkZ = minZ >> 4;
         final int maxChunkZ = maxZ >> 4;
 
@@ -256,378 +196,151 @@ public final class FastExplosionEngine {
             final int currentMinX = Math.max(minX, chunkMinX);
             final int currentMaxX = Math.min(maxX, chunkMaxX);
 
-            if (currentMinX > currentMaxX) {
-                continue;
-            }
+            if (currentMinX > currentMaxX) continue;
 
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-
                 final int chunkMinZ = chunkZ << 4;
                 final int chunkMaxZ = chunkMinZ + 15;
 
                 final int currentMinZ = Math.max(minZ, chunkMinZ);
                 final int currentMaxZ = Math.min(maxZ, chunkMaxZ);
 
-                if (currentMinZ > currentMaxZ) {
-                    continue;
-                }
+                if (currentMinZ > currentMaxZ) continue;
 
-                /*
-                 * On récupère le chunk UNE seule fois.
-                 */
                 final LevelChunk chunk = level.getChunk(chunkX, chunkZ);
-
-                if (chunk == null) {
-                    continue;
-                }
+                if (chunk == null) continue;
 
                 boolean chunkModified = false;
 
                 for (int y = minY; y <= maxY; y++) {
-
                     final double dy = (y + 0.5) - pos.y;
                     final double dySq = dy * dy;
 
-                    /*
-                     * Cette couche Y est déjà hors de la sphère.
-                     * On évite entièrement le parcours X/Z.
-                     */
-                    if (dySq > maxRadiusSq) {
-                        continue;
-                    }
+                    if (dySq > maxRadiusSq) continue;
 
-                    /*
-                     * Rayon horizontal maximal disponible
-                     * pour cette hauteur.
-                     */
-                    final double horizontalRadiusSq =
-                            maxRadiusSq - dySq;
+                    final double horizontalRadiusSq = maxRadiusSq - dySq;
+                    if (horizontalRadiusSq <= 0.0) continue;
 
-                    if (horizontalRadiusSq <= 0.0) {
-                        continue;
-                    }
+                    final int sectionIndex = chunk.getSectionIndex(y);
+                    final LevelChunkSection section = chunk.getSection(sectionIndex);
 
-                    final int sectionIndex =
-                            chunk.getSectionIndex(y);
-
-                    final LevelChunkSection section =
-                            chunk.getSection(sectionIndex);
-
-                    /*
-                     * GROS gain dans les zones aérées :
-                     * inutile de tester les blocs d'une section entièrement vide.
-                     */
-                    if (section == null || section.hasOnlyAir()) {
-                        continue;
-                    }
+                    // Fast-path: skip empty chunk sections entirely
+                    if (section == null || section.hasOnlyAir()) continue;
 
                     final int localY = y & 15;
 
-                    // ------------------------------------------------
-                    // 8. Parcours X/Z dans le disque de la couche
-                    // ------------------------------------------------
-
                     for (int x = currentMinX; x <= currentMaxX; x++) {
-
                         final double dx = (x + 0.5) - pos.x;
                         final double dxSq = dx * dx;
 
-                        /*
-                         * Si même avec Z = centre on est hors du cercle,
-                         * on saute directement tout le Z.
-                         */
-                        if (dxSq > horizontalRadiusSq) {
-                            continue;
-                        }
+                        if (dxSq > horizontalRadiusSq) continue;
 
-                        final double remainingZSq =
-                                horizontalRadiusSq - dxSq;
+                        final double remainingZSq = horizontalRadiusSq - dxSq;
+                        final double zRadius = Math.sqrt(remainingZSq);
 
-                        final double zRadius =
-                                Math.sqrt(remainingZSq);
+                        final int zStart = Math.max(currentMinZ, (int) Math.ceil(pos.z - zRadius - 0.5));
+                        final int zEnd = Math.min(currentMaxZ, (int) Math.floor(pos.z + zRadius - 0.5));
 
-                        /*
-                         * On calcule directement la plage Z admissible.
-                         * Cela évite de parcourir les Z hors du cercle.
-                         */
-                        final int zStart = Math.max(
-                                currentMinZ,
-                                (int) Math.ceil(pos.z - zRadius - 0.5)
-                        );
-
-                        final int zEnd = Math.min(
-                                currentMaxZ,
-                                (int) Math.floor(pos.z + zRadius - 0.5)
-                        );
-
-                        if (zStart > zEnd) {
-                            continue;
-                        }
+                        if (zStart > zEnd) continue;
 
                         final int localX = x & 15;
 
                         for (int z = zStart; z <= zEnd; z++) {
-
                             final int localZ = z & 15;
 
-                            /*
-                             * Premier filtre sphérique sans sqrt.
-                             */
                             final double dz = (z + 0.5) - pos.z;
-                            final double blockDistSq =
-                                    dxSq + dySq + dz * dz;
+                            final double blockDistSq = dxSq + dySq + dz * dz;
 
-                            if (blockDistSq > maxRadiusSq) {
-                                continue;
-                            }
+                            if (blockDistSq > maxRadiusSq) continue;
 
-                            final BlockState currentState =
-                                    section.getBlockState(
-                                            localX,
-                                            localY,
-                                            localZ
-                                    );
+                            final BlockState currentState = section.getBlockState(localX, localY, localZ);
+                            if (currentState.isAir()) continue;
 
-                            if (currentState.isAir()) {
-                                continue;
-                            }
+                            final double effectiveRadius = power + multiScaleNoise(x, y, z, seed);
+                            if (effectiveRadius <= 0.0) continue;
 
-                            /*
-                             * Seulement maintenant qu'on sait que le bloc
-                             * peut être détruit, on calcule le bruit.
-                             */
-                            final double effectiveRadius =
-                                    power + fastNoise(x, y, z);
-
-                            if (effectiveRadius <= 0.0) {
-                                continue;
-                            }
-
-                            final double effectiveRadiusSq =
-                                    effectiveRadius * effectiveRadius;
-
-                            if (blockDistSq > effectiveRadiusSq) {
-                                continue;
-                            }
+                            final double effectiveRadiusSq = effectiveRadius * effectiveRadius;
+                            if (blockDistSq > effectiveRadiusSq) continue;
 
                             mutablePos.set(x, y, z);
 
+                            // Directly prime TNT blocks in-place to avoid triggering vanilla block-update storms
                             if (currentState.is(Blocks.TNT)) {
-
-                                section.setBlockState(
-                                        localX,
-                                        localY,
-                                        localZ,
-                                        Blocks.AIR.defaultBlockState()
-                                );
-
+                                section.setBlockState(localX, localY, localZ, Blocks.AIR.defaultBlockState());
                                 chunkModified = true;
 
-                                level.getChunkSource()
-                                        .blockChanged(mutablePos);
+                                level.getChunkSource().blockChanged(mutablePos);
+                                level.getLightEngine().checkBlock(mutablePos);
 
-                                level.getLightEngine()
-                                        .checkBlock(mutablePos);
+                                final PrimedTnt primedTnt = new PrimedTnt(level, x + 0.5, y, z + 0.5, null);
 
-                                final PrimedTnt primedTnt =
-                                        new PrimedTnt(
-                                                level,
-                                                x + 0.5,
-                                                y,
-                                                z + 0.5,
-                                                null
-                                        );
-
+                                // Give primary batch longer fuse (1-2s) to spread out; penalize excess
                                 if (spawnedTntCount < MAX_PRIMED_PER_EXPLOSION) {
                                     spawnedTntCount++;
-
-                                    primedTnt.setFuse(
-                                            random.nextInt(15) + 10
-                                    );
+                                    primedTnt.setFuse(random.nextInt(20) + 20);
                                 } else {
-                                    /*
-                                     * TNT supplémentaire :
-                                     * explosion presque immédiate.
-                                     */
-                                    primedTnt.setFuse(
-                                            random.nextInt(3) + 1
-                                    );
+                                    primedTnt.setFuse(random.nextInt(6) + 10);
                                 }
 
-                                final double pushX =
-                                        x + 0.5 - pos.x;
-
-                                final double pushY =
-                                        y + 0.5 - pos.y;
-
-                                final double pushZ =
-                                        z + 0.5 - pos.z;
-
-                                final double pushLengthSq =
-                                        pushX * pushX
-                                                + pushY * pushY
-                                                + pushZ * pushZ;
+                                final double pushX = x + 0.5 - pos.x;
+                                final double pushY = y + 0.5 - pos.y;
+                                final double pushZ = z + 0.5 - pos.z;
+                                final double pushLengthSq = pushX * pushX + pushY * pushY + pushZ * pushZ;
 
                                 if (pushLengthSq > 0.0) {
+                                    final double pushLength = Math.sqrt(pushLengthSq);
+                                    final double impact = Math.max(0.0, 1.0 - (pushLength / power));
+                                    final double invLength = 1.0 / pushLength;
 
-                                    final double pushLength =
-                                            Math.sqrt(pushLengthSq);
+                                    final double dirX = pushX * invLength;
+                                    final double dirY = pushY * invLength;
+                                    final double dirZ = pushZ * invLength;
 
-                                    final double impact =
-                                            Math.max(
-                                                    0.0,
-                                                    1.0 - (
-                                                            pushLength
-                                                                    / power
-                                                    )
-                                            );
+                                    final double speed = impact * (power * 0.40 + 0.5);
+                                    final double yBoost = 0.20 + (impact * 0.30);
 
-                                    final double invLength =
-                                            1.0 / pushLength;
-
-                                    final double dirX =
-                                            pushX * invLength;
-
-                                    final double dirY =
-                                            pushY * invLength;
-
-                                    final double dirZ =
-                                            pushZ * invLength;
-
-                                    final double speed =
-                                            Math.min(
-                                                    0.8,
-                                                    impact * 0.9
-                                            );
-
-                                    primedTnt.setDeltaMovement(
-                                            dirX * speed,
-                                            dirY * speed + 0.25,
-                                            dirZ * speed
-                                    );
-
+                                    primedTnt.setDeltaMovement(dirX * speed, dirY * speed + yBoost, dirZ * speed);
                                 } else {
-                                    primedTnt.setDeltaMovement(
-                                            0,
-                                            0.3,
-                                            0
-                                    );
+                                    primedTnt.setDeltaMovement(0, 0.4, 0);
                                 }
 
                                 level.addFreshEntity(primedTnt);
-
                                 continue;
                             }
 
-                            final float resistance =
-                                    currentState
-                                            .getBlock()
-                                            .getExplosionResistance();
+                            final float resistance = currentState.getBlock().getExplosionResistance();
+                            if (resistance >= 100.0f) continue;
 
-                            if (resistance >= 100.0f) {
-                                continue;
-                            }
-
-                            /*
-                             * Probabilité conservée comme dans ton moteur
-                             * original.
-                             */
-                            final float destructionProbability =
-                                    Math.max(
-                                            0.0f,
-                                            1.0f
-                                                    - resistance
-                                                    / (power * 2.0f)
-                                    );
-
-                            /*
-                             * Ton ancien FastExplosionEngine détruisait
-                             * systématiquement les blocs ici.
-                             *
-                             * On conserve ce comportement.
-                             */
-                            section.setBlockState(
-                                    localX,
-                                    localY,
-                                    localZ,
-                                    Blocks.AIR.defaultBlockState()
-                            );
-
+                            section.setBlockState(localX, localY, localZ, Blocks.AIR.defaultBlockState());
                             chunkModified = true;
 
-                            level.getChunkSource()
-                                    .blockChanged(mutablePos);
+                            level.getChunkSource().blockChanged(mutablePos);
+                            level.getLightEngine().checkBlock(mutablePos);
 
-                            level.getLightEngine()
-                                    .checkBlock(mutablePos);
-
+                            // Only notify boundary neighbors if fluid or gravity-bound to stop block update cascades
                             for (Direction direction : Direction.values()) {
+                                final int nx = x + direction.getStepX();
+                                final int ny = y + direction.getStepY();
+                                final int nz = z + direction.getStepZ();
 
-                                final int nx =
-                                        x + direction.getStepX();
+                                final double ndx = nx + 0.5 - pos.x;
+                                final double ndy = ny + 0.5 - pos.y;
+                                final double ndz = nz + 0.5 - pos.z;
 
-                                final int ny =
-                                        y + direction.getStepY();
-
-                                final int nz =
-                                        z + direction.getStepZ();
-
-                                final double ndx =
-                                        nx + 0.5 - pos.x;
-
-                                final double ndy =
-                                        ny + 0.5 - pos.y;
-
-                                final double ndz =
-                                        nz + 0.5 - pos.z;
-
-                                /*
-                                 * Même logique que dans ton moteur :
-                                 * on ne réveille que les voisins hors
-                                 * du rayon de l'explosion.
-                                 */
-                                if (ndx * ndx
-                                        + ndy * ndy
-                                        + ndz * ndz
-                                        > effectiveRadiusSq) {
-
+                                if (ndx * ndx + ndy * ndy + ndz * ndz > effectiveRadiusSq) {
                                     neighborPos.set(nx, ny, nz);
+                                    final BlockState neighborState = level.getBlockState(neighborPos);
 
-                                    final BlockState neighborState =
-                                            level.getBlockState(
-                                                    neighborPos
-                                            );
-
-                                    if (!neighborState
-                                            .getFluidState()
-                                            .isEmpty()
-                                            || neighborState.getBlock()
-                                            instanceof FallingBlock) {
-
-                                        level.neighborChanged(
-                                                neighborPos,
-                                                currentState.getBlock(),
-                                                null
-                                        );
+                                    if (!neighborState.getFluidState().isEmpty() || neighborState.getBlock() instanceof FallingBlock) {
+                                        level.neighborChanged(neighborPos, currentState.getBlock(), null);
                                     }
                                 }
                             }
 
-                            lootBuilder.withParameter(
-                                    LootContextParams.ORIGIN,
-                                    Vec3.atCenterOf(mutablePos)
-                            );
-
-                            final List<ItemStack> drops =
-                                    currentState.getDrops(
-                                            lootBuilder
-                                    );
-
+                            lootBuilder.withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(mutablePos));
+                            final List<ItemStack> drops = currentState.getDrops(lootBuilder);
                             for (ItemStack stack : drops) {
-                                itemDrops.addTo(
-                                        stack.getItem(),
-                                        stack.getCount()
-                                );
+                                itemDrops.addTo(stack.getItem(), stack.getCount());
                             }
                         }
                     }
@@ -643,34 +356,18 @@ public final class FastExplosionEngine {
             }
         }
 
+        // Batch item drops into max stack sizes rather than spawning hundreds of individual ItemEntity instances
         itemDrops.forEach((item, count) -> {
-
             int remaining = count;
-
-            final int maxStackSize =
-                    item.getDefaultMaxStackSize();
+            final int maxStackSize = item.getDefaultMaxStackSize();
 
             while (remaining > 0) {
-
-                final int stackSize =
-                        Math.min(
-                                remaining,
-                                maxStackSize
-                        );
-
+                final int stackSize = Math.min(remaining, maxStackSize);
                 remaining -= stackSize;
 
-                final ItemEntity itemEntity =
-                        new ItemEntity(
-                                level,
-                                pos.x,
-                                pos.y,
-                                pos.z,
-                                new ItemStack(
-                                        item,
-                                        stackSize
-                                )
-                        );
+                final ItemEntity itemEntity = new ItemEntity(
+                        level, pos.x, pos.y, pos.z, new ItemStack(item, stackSize)
+                );
 
                 level.addFreshEntity(itemEntity);
             }
