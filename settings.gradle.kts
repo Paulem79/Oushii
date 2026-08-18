@@ -45,4 +45,4 @@ stonecutter {
     }
 }
 
-rootProject.name = "Template Multiloader"
+rootProject.name = "Oushii"

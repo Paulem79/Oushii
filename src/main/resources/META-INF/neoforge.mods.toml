@@ -7,15 +7,15 @@ loaderVersion="[1,)"
 modId = "${id}"
 displayName = "${name}"
 version = "${version}"
-authors = "Me!"
-description = "This is an example description! Tell everyone what your mod is about!"
+authors = "Paulem"
+description = "Optimized tnt mod"
 
-logoFile = "assets/template/icon.png"
+logoFile = "assets/oushii/icon.png"
 #displayURL = "..."
 #issueTrackerUrl = "..."
 
 [[mixins]]
-config = "template.mixins.json"
+config = "oushii.mixins.json"
 
 [[dependencies.${id}]]
 modId = "minecraft"

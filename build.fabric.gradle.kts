@@ -53,7 +53,7 @@ dependencies {
 loom {
     fabricModJsonPath = rootProject.file("src/main/resources/fabric.mod.json") // Useful for interface injection
     accessWidenerPath = sc.process(
-        rootProject.file("src/main/resources/template.ct"),
+        rootProject.file("src/main/resources/oushii.ct"),
         "build/processed.ct"
     )
 

@@ -1,9 +1,9 @@
 {
   "required": true,
-  "package": "com.example.mixin",
+  "package": "net.paulem.mixin",
   "compatibilityLevel": "${java}",
   "mixins": [
-    "ExampleMixin"
+    "PrimedTntMixin"
   ],
   "injectors": {
     "defaultRequire": 1

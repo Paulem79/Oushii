@@ -1,9 +1,9 @@
-package com.example;
+package net.paulem;
 
 //? if fabric {
 import net.fabricmc.api.ModInitializer;
 
-import static com.example.TemplateModCommon.*;
+import static net.paulem.TemplateModCommon.*;
 
 public class TemplateModFabric implements ModInitializer {
     @Override
@@ -15,10 +15,7 @@ public class TemplateModFabric implements ModInitializer {
         LOGGER.info("Hello Fabric world!");
 
         //? if !release
-        LOGGER.warn("I'm still a template!");
-
-        //? if fapi: <0.100
-        //LOGGER.info("Fabric API is old on this version");
+        //LOGGER.warn("I'm still a template!");
     }
 }
 //?}
