@@ -29,7 +29,9 @@ repositories {
 }
 
 dependencies {
-
+    val midnightlibVersion = sc.properties.get<String>("deps.midnightlib")
+    implementation("maven.modrinth:midnightlib:$midnightlibVersion")
+    jarJar("maven.modrinth:midnightlib:$midnightlibVersion")
 }
 
 neoForge {

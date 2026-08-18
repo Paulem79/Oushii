@@ -26,7 +26,7 @@ public abstract class PrimedTntMixin extends Entity {
 
 		PrimedTnt self = (PrimedTnt) (Object) this;
 
-		// Short-circuit resting TNT to bypass entity physics calculations entirely
+		// Skip physics for resting TNT to avoid useless ground collision ticks
 		if (self.onGround() && self.getDeltaMovement().lengthSqr() < 1.0E-4) {
 			int newFuse = self.getFuse() - 1;
 			self.setFuse(newFuse);
@@ -41,7 +41,7 @@ public abstract class PrimedTntMixin extends Entity {
 			return;
 		}
 
-		// Intercept detonation tick and hand off to cluster manager instead of running vanilla Level#explode
+		// Intercept detonation and hand off to cluster queue instead of running Level#explode
 		if (self.getFuse() <= 1) {
 			self.discard();
 			if (this.level() instanceof ServerLevel serverLevel) {

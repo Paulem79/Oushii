@@ -1,0 +1,17 @@
+{
+  "oushii.midnightconfig.title": "Configuration d'Oushii",
+  "oushii.midnightconfig.category.client": "Client",
+  "oushii.midnightconfig.category.server": "Serveur",
+
+  "oushii.midnightconfig.clientSection": "Options Client",
+  "oushii.midnightconfig.maxExplosionParticlesPerTick": "Particules max / tick",
+  "oushii.midnightconfig.maxExplosionParticlesPerTick.tooltip": "Plafond de particules d'explosion générées par tick.",
+  "oushii.midnightconfig.maxRenderedTnt": "TNT affichées max",
+  "oushii.midnightconfig.maxRenderedTnt.tooltip": "Nombre maximal d'entités TNT rendues à l'écran.",
+
+  "oushii.midnightconfig.serverSection": "Options Serveur",
+  "oushii.midnightconfig.maxPrimedPerExplosion": "TNT amorcées max / explosion",
+  "oushii.midnightconfig.maxPrimedPerExplosion.tooltip": "Limite le nombre de TNT amorcées générées par explosion.",
+  "oushii.midnightconfig.clusterRadius": "Rayon de regroupement",
+  "oushii.midnightconfig.clusterRadius.tooltip": "Distance en blocs pour fusionner les explosions du même tick."
+}

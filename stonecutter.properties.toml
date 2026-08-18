@@ -16,11 +16,13 @@ mod.mc_releases = ["1.21", "1.21.1"]
 # Mod compatibility range in fabric.mod.json/neoforge.mods.toml
 mod.mc_compat = ">=1.21 <=1.21.1"
 deps.fabric_api = "0.116.15+1.21.1"
+deps.midnightlib = "1.9.3+1.21.1-fabric"
 
 
 [neoforge."1.21.1"]
 mod.mc_compat = "[1.21, 1.21.1]"
 deps.neo_loader = "21.1.248"
+deps.midnightlib = "1.9.3+1.21.1-neoforge"
 
 
 ["1.21.11"]
@@ -30,10 +32,12 @@ mod.mc_releases = ["1.21.11"]
 [fabric."1.21.11"]
 mod.mc_compat = "1.21.11"
 deps.fabric_api = "0.141.6+1.21.11"
+deps.midnightlib = "1.9.3+1.21.11-fabric"
 
 [neoforge."1.21.11"]
 mod.mc_compat = "[1.21.11]"
 deps.neo_loader = "21.11.45"
+deps.midnightlib = "1.9.3+1.21.11-neoforge"
 
 
 ["26.2.x"]
@@ -43,8 +47,10 @@ mod.mc_releases = ["26.2"]
 [fabric."26.2.x"]
 mod.mc_compat = "~26.2"
 deps.fabric_api = "0.156.0+26.2"
+deps.midnightlib = "1.9.3+26.2-fabric"
 
 
 [neoforge."26.2.x"]
 mod.mc_compat = "[26.2, 26.3)"
 deps.neo_loader = "26.2.0.43-beta"
+deps.midnightlib = "1.9.3+26.2-neoforge"

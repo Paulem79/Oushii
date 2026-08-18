@@ -49,6 +49,10 @@ dependencies {
     // Use `mod{dependency type}` even on 26.1+ - loom-back-compat converts them
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     fapi("fabric-lifecycle-events-v1", "fabric-resource-loader-v0", "fabric-content-registries-v0", "fabric-registry-sync-v0")
+
+    val midnightlibVersion = sc.properties.get<String>("deps.midnightlib")
+    modImplementation("maven.modrinth:midnightlib:${midnightlibVersion}")
+    include("maven.modrinth:midnightlib:${midnightlibVersion}")
 }
 
 loom {

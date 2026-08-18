@@ -13,6 +13,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import net.paulem.utils.SCUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -35,7 +36,7 @@ public abstract class EntityMixin {
     @Shadow public boolean horizontalCollision;
     @Shadow public boolean verticalCollision;
 
-    // Strips TNT-vs-TNT pushing: N TNT entities colliding creates an O(N^2) CPU nightmare (bruh)
+    // Strip TNT-vs-TNT pushing; N entities colliding creates an O(N^2) CPU nightmare
     @WrapOperation(
             method = "collide",
             at = @At(
@@ -50,7 +51,7 @@ public abstract class EntityMixin {
         return original.call(level, entity, box);
     }
 
-    // Fast-path: Skip complex VoxelShape raycasts if flying through purely empty chunk sections
+    // Bypass VoxelShape physics entirely when flying through empty chunk sections
     @Inject(method = "move", at = @At("HEAD"), cancellable = true)
     private void fastAirMove(MoverType type, Vec3 delta, CallbackInfo ci) {
         if (this.level().isClientSide() || !((Object) this instanceof PrimedTnt)) {
@@ -79,8 +80,8 @@ public abstract class EntityMixin {
         int minZ = Mth.floor(box.minZ) >> 4;
         int maxZ = Mth.floor(box.maxZ) >> 4;
 
-        int minY = Math.max(level.getMinY(), Mth.floor(box.minY));
-        int maxY = Math.min(level.getMaxY(), Mth.floor(box.maxY));
+        int minY = Math.max(SCUtils.getLevelMinY(level), Mth.floor(box.minY));
+        int maxY = Math.min(SCUtils.getLevelMaxY(level), Mth.floor(box.maxY));
 
         for (int cx = minX; cx <= maxX; cx++) {
             for (int cz = minZ; cz <= maxZ; cz++) {

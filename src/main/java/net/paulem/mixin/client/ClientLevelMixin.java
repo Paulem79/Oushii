@@ -1,5 +1,6 @@
 package net.paulem.mixin.client;
 
+import net.paulem.config.OushiiConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -22,16 +23,11 @@ import java.util.List;
 public abstract class ClientLevelMixin {
 
     @Unique
-    private static final int MAX_EXPLOSION_PARTICLES_PER_TICK = 100;
-    @Unique
-    private static final int MAX_RENDERED_TNT = 75;
-
-    @Unique
     private int explosionParticleCount = 0;
     @Unique
     private long lastParticleResetTick = -1L;
 
-    // Hard-cap particle spawns per tick to protect the client render thread from stalling
+    // Stop particle spam from choking client render thread on huge detonations
     @Inject(
             method = "addParticle(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)V",
             at = @At("HEAD"),
@@ -47,7 +43,7 @@ public abstract class ClientLevelMixin {
                 this.lastParticleResetTick = currentTick;
             }
 
-            if (this.explosionParticleCount >= MAX_EXPLOSION_PARTICLES_PER_TICK) {
+            if (this.explosionParticleCount >= OushiiConfig.maxExplosionParticlesPerTick) {
                 ci.cancel();
             } else {
                 this.explosionParticleCount++;
@@ -55,7 +51,7 @@ public abstract class ClientLevelMixin {
         }
     }
 
-    // Distance-cull TNT entity rendering so distant blasts don't eat draw calls
+    // Cull distant TNT draw calls; rendering thousands of 3D entity models melts client GPUs
     @Inject(
             method = "entitiesForRendering",
             at = @At("RETURN"),
@@ -77,14 +73,14 @@ public abstract class ClientLevelMixin {
             }
         }
 
-        if (tntList.size() <= MAX_RENDERED_TNT) {
+        if (tntList.size() <= OushiiConfig.maxRenderedTnt) {
             return;
         }
 
-        // Sort by distance squared to avoid Math.sqrt overhead on the client tick
+        // distanceToSqr avoids Math.sqrt overhead on hot render paths
         tntList.sort(Comparator.comparingDouble(tnt -> tnt.distanceToSqr(player)));
 
-        for (int i = 0; i < MAX_RENDERED_TNT; i++) {
+        for (int i = 0; i < OushiiConfig.maxRenderedTnt; i++) {
             filteredList.add(tntList.get(i));
         }
 

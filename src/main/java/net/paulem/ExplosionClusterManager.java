@@ -1,5 +1,6 @@
 package net.paulem;
 
+import net.paulem.config.OushiiConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -12,9 +13,7 @@ public final class ExplosionClusterManager {
 
     private ExplosionClusterManager() {}
 
-    private static final double CLUSTER_RADIUS_SQ = 3.0 * 3.0;
-
-    // Prevent memory leaks when dimension/world unloads
+    // WeakHashMap prevents memory leaks when dimensions unload
     private static final Map<ServerLevel, List<PendingExplosion>> QUEUES = new WeakHashMap<>();
 
     public record PendingExplosion(Vec3 pos, float power) {}
@@ -29,7 +28,7 @@ public final class ExplosionClusterManager {
             return;
         }
 
-        // Snapshot and clear to safely prevent concurrent modification if explosions queue more explosions
+        // Snapshot and clear to prevent ConcurrentModificationException if blasts trigger more blasts
         List<PendingExplosion> pending = new ArrayList<>(queue);
         queue.clear();
 
@@ -43,6 +42,7 @@ public final class ExplosionClusterManager {
     private static List<PendingExplosion> clusterExplosions(List<PendingExplosion> input) {
         List<PendingExplosion> result = new ArrayList<>();
         boolean[] used = new boolean[input.size()];
+        double clusterRadiusSq = OushiiConfig.clusterRadius * OushiiConfig.clusterRadius;
 
         for (int i = 0; i < input.size(); i++) {
             if (used[i]) continue;
@@ -58,7 +58,7 @@ public final class ExplosionClusterManager {
                 if (used[j]) continue;
 
                 PendingExplosion other = input.get(j);
-                if (base.pos().distanceToSqr(other.pos()) <= CLUSTER_RADIUS_SQ) {
+                if (base.pos().distanceToSqr(other.pos()) <= clusterRadiusSq) {
                     sumX += other.pos().x;
                     sumY += other.pos().y;
                     sumZ += other.pos().z;
@@ -68,7 +68,7 @@ public final class ExplosionClusterManager {
             }
 
             Vec3 centroid = new Vec3(sumX / count, sumY / count, sumZ / count);
-            // Power scales by cube root to keep volumetric impact realistic without lagging the server
+            // Cube root power scaling preserves realistic volumetric destruction
             float mergedPower = (float) (base.power() * Math.cbrt(count));
             result.add(new PendingExplosion(centroid, mergedPower));
         }

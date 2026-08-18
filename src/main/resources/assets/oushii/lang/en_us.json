@@ -1,0 +1,17 @@
+{
+  "oushii.midnightconfig.title": "Oushii Config",
+  "oushii.midnightconfig.category.client": "Client",
+  "oushii.midnightconfig.category.server": "Server",
+
+  "oushii.midnightconfig.clientSection": "Client Settings",
+  "oushii.midnightconfig.maxExplosionParticlesPerTick": "Max Particles / Tick",
+  "oushii.midnightconfig.maxExplosionParticlesPerTick.tooltip": "Hard-cap on explosion particles spawned per tick to protect client FPS.",
+  "oushii.midnightconfig.maxRenderedTnt": "Max Rendered TNT",
+  "oushii.midnightconfig.maxRenderedTnt.tooltip": "Maximum TNT entities rendered on screen simultaneously.",
+
+  "oushii.midnightconfig.serverSection": "Server Settings",
+  "oushii.midnightconfig.maxPrimedPerExplosion": "Max Primed TNT Per Blast",
+  "oushii.midnightconfig.maxPrimedPerExplosion.tooltip": "Limit primed TNT spawned per explosion to prevent entity cascades.",
+  "oushii.midnightconfig.clusterRadius": "Clustering Radius",
+  "oushii.midnightconfig.clusterRadius.tooltip": "Radius in blocks within which same-tick explosions merge into a single blast."
+}

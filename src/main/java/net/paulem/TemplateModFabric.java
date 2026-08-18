@@ -1,7 +1,9 @@
 package net.paulem;
 
 //? if fabric {
+import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ModInitializer;
+import net.paulem.config.OushiiConfig;
 
 import static net.paulem.TemplateModCommon.*;
 
@@ -13,6 +15,8 @@ public class TemplateModFabric implements ModInitializer {
         // Proceed with mild caution.
 
         LOGGER.info("Hello Fabric world!");
+
+        MidnightConfig.init("oushii", OushiiConfig.class);
 
         //? if !release
         //LOGGER.warn("I'm still a template!");

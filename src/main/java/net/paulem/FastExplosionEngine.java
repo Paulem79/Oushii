@@ -1,5 +1,12 @@
 package net.paulem;
 
+//? if >1.21.2 {
+import net.minecraft.world.level.ServerExplosion;
+//?} else {
+//import net.minecraft.world.level.Explosion;
+//?}
+
+import net.paulem.config.OushiiConfig;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,21 +27,15 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
-//? if >1.21.2
-import net.minecraft.world.level.ServerExplosion;
+import net.paulem.utils.SCUtils;
 
 import java.util.List;
 
 public final class FastExplosionEngine {
 
-    private FastExplosionEngine() {
-    }
+    private FastExplosionEngine() {}
 
-    // Prevents entity-spawning cascades from choking the server thread
-    private static final int MAX_PRIMED_PER_EXPLOSION = 32;
-
-    // Cheap, deterministic PRNG noise to give blast edges a rough shape without Perlin overhead
+    // Cheap 3D PRNG hash to give craters organic rough edges without Perlin noise overhead
     private static double fastNoise(int x, int y, int z, int seed) {
         int h = x * 374761393 + y * 668265263 + z * 2147483647 + seed * 1442968193;
         h = (h ^ (h >>> 13)) * 1274126177;
@@ -49,37 +50,24 @@ public final class FastExplosionEngine {
     }
 
     public static void explode(ServerLevel level, Vec3 pos, float power) {
-        if (power <= 0.0f) {
-            return;
-        }
+        if (power <= 0.0f) return;
 
         RandomSource random = level.getRandom();
 
-        // Broadcast directly to client to bypass vanilla Explosion packet payload bloat
+        // Broadcast effects directly to bypass vanilla Explosion packet bloat
         level.playSound(
-                null,
-                pos.x,
-                pos.y,
-                pos.z,
+                null, pos.x, pos.y, pos.z,
                 net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
                 net.minecraft.sounds.SoundSource.BLOCKS,
-                4.0f,
-                (1.0f + (random.nextFloat() - random.nextFloat()) * 0.2f) * 0.7f
+                4.0f, (1.0f + (random.nextFloat() - random.nextFloat()) * 0.2f) * 0.7f
         );
 
         level.sendParticles(
                 net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
-                pos.x,
-                pos.y,
-                pos.z,
-                1,
-                0.0,
-                0.0,
-                0.0,
-                0.0
+                pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0
         );
 
-        // Standard MC mechanic: submerged explosions don't break blocks
+        // Vanilla rule: submerged blasts don't break blocks
         final BlockPos centerPos = BlockPos.containing(pos);
         final boolean isSubmerged = !level.getFluidState(centerPos).isEmpty();
 
@@ -93,18 +81,13 @@ public final class FastExplosionEngine {
         final int minZ = (int) Math.floor(pos.z - maxRadius);
         final int maxZ = (int) Math.ceil(pos.z + maxRadius);
 
-        //? if >1.21.2 {
-        final int levelMinY = level.getMinY();
-        final int levelMaxY = level.getMaxY();
-        //?} else {
-        /*final int levelMinY = level.getMinBuildHeight();
-        final int levelMaxY = level.getMaxBuildHeight();
-        *///?}
+        final int levelMinY = SCUtils.getLevelMinY(level);
+        final int levelMaxY = SCUtils.getLevelMaxY(level);
 
         final int minY = Math.max(levelMinY, (int) Math.floor(pos.y - maxRadius));
         final int maxY = Math.min(levelMaxY, (int) Math.ceil(pos.y + maxRadius));
 
-        // Version-agnostic dummy context for Entity#ignoreExplosion checks
+        // Dummy explosion context for Entity#ignoreExplosion checks
         //? if >1.21.2 {
         final ServerExplosion explosionContext = new ServerExplosion(
                 level, null, null, null, pos, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
@@ -118,7 +101,6 @@ public final class FastExplosionEngine {
         //?}
 
         final double entityRadiusSq = (double) power * power;
-
         final AABB explosionBox = new AABB(
                 pos.x - power, pos.y - power, pos.z - power,
                 pos.x + power, pos.y + power, pos.z + power
@@ -153,7 +135,7 @@ public final class FastExplosionEngine {
                 final double yBoost;
 
                 if (entity instanceof PrimedTnt) {
-                    // Yeet existing primed TNT without recalculating/resetting fuse
+                    // Yeet existing primed TNT without resetting its fuse
                     speed = impact * (power * 0.40 + 0.6);
                     yBoost = 0.20 + (impact * 0.30);
                 } else {
@@ -170,9 +152,7 @@ public final class FastExplosionEngine {
             }
         }
 
-        if (isSubmerged) {
-            return;
-        }
+        if (isSubmerged) return;
 
         final Object2IntOpenHashMap<Item> itemDrops = new Object2IntOpenHashMap<>();
         final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
@@ -183,7 +163,7 @@ public final class FastExplosionEngine {
 
         int spawnedTntCount = 0;
 
-        // Iterate directly over Chunk -> Section palette to bypass expensive level.getBlockState() calls
+        // Iterate Chunk -> Section palette directly to skip expensive level.getBlockState() lookups
         final int minChunkX = minX >> 4;
         final int maxChunkX = maxX >> 4;
         final int minChunkZ = minZ >> 4;
@@ -224,7 +204,6 @@ public final class FastExplosionEngine {
                     final int sectionIndex = chunk.getSectionIndex(y);
                     final LevelChunkSection section = chunk.getSection(sectionIndex);
 
-                    // Fast-path: skip empty chunk sections entirely
                     if (section == null || section.hasOnlyAir()) continue;
 
                     final int localY = y & 15;
@@ -264,7 +243,7 @@ public final class FastExplosionEngine {
 
                             mutablePos.set(x, y, z);
 
-                            // Directly prime TNT blocks in-place to avoid triggering vanilla block-update storms
+                            // Prime TNT blocks in-place to avoid triggering block-update cascades
                             if (currentState.is(Blocks.TNT)) {
                                 section.setBlockState(localX, localY, localZ, Blocks.AIR.defaultBlockState());
                                 chunkModified = true;
@@ -275,7 +254,7 @@ public final class FastExplosionEngine {
                                 final PrimedTnt primedTnt = new PrimedTnt(level, x + 0.5, y, z + 0.5, null);
 
                                 // Give primary batch longer fuse (1-2s) to spread out; penalize excess
-                                if (spawnedTntCount < MAX_PRIMED_PER_EXPLOSION) {
+                                if (spawnedTntCount < OushiiConfig.maxPrimedPerExplosion) {
                                     spawnedTntCount++;
                                     primedTnt.setFuse(random.nextInt(20) + 20);
                                 } else {
@@ -317,7 +296,7 @@ public final class FastExplosionEngine {
                             level.getChunkSource().blockChanged(mutablePos);
                             level.getLightEngine().checkBlock(mutablePos);
 
-                            // Only notify boundary neighbors if fluid or gravity-bound to stop block update cascades
+                            // Only notify boundary neighbors if fluid or gravity-bound to stop update storms
                             for (Direction direction : Direction.values()) {
                                 final int nx = x + direction.getStepX();
                                 final int ny = y + direction.getStepY();
@@ -356,7 +335,7 @@ public final class FastExplosionEngine {
             }
         }
 
-        // Batch item drops into max stack sizes rather than spawning hundreds of individual ItemEntity instances
+        // Aggregate item drops into full stacks instead of spawning hundreds of separate entities
         itemDrops.forEach((item, count) -> {
             int remaining = count;
             final int maxStackSize = item.getDefaultMaxStackSize();
