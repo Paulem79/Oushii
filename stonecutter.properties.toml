@@ -7,10 +7,24 @@ mod.version = "0.1.0"
 deps.fabric_loader = "0.19.3"
 loomx.loom_version = "1.17-SNAPSHOT"
 
+
+["1.20.6"]
+mod.mc_releases = ["1.20.5", "1.20.6"]
+
+[fabric."1.20.6"]
+mod.mc_compat = ">=1.20.5 <=1.20.6"
+deps.fabric_api = "0.100.8+1.20.6"
+deps.midnightlib = "1.5.5-fabric"
+
+[neoforge."1.20.6"]
+mod.mc_compat = "[1.20.5, 1.20.6]"
+deps.neo_loader = "20.6.139"
+deps.midnightlib = "1.5.5-neoforge"
+
+
 ["1.21.1"]
 # List of releases to be marked compatible on Modrinth/Curseforge
 mod.mc_releases = ["1.21", "1.21.1"]
-
 
 [fabric."1.21.1"]
 # Mod compatibility range in fabric.mod.json/neoforge.mods.toml
@@ -18,16 +32,28 @@ mod.mc_compat = ">=1.21 <=1.21.1"
 deps.fabric_api = "0.116.15+1.21.1"
 deps.midnightlib = "1.9.3+1.21.1-fabric"
 
-
 [neoforge."1.21.1"]
 mod.mc_compat = "[1.21, 1.21.1]"
 deps.neo_loader = "21.1.248"
 deps.midnightlib = "1.9.3+1.21.1-neoforge"
 
 
+["1.21.5"]
+mod.mc_releases = ["1.21.5"]
+
+[fabric."1.21.5"]
+mod.mc_compat = "1.21.5"
+deps.fabric_api = "0.128.2+1.21.5"
+deps.midnightlib = "1.9.3+1.21.5-fabric"
+
+[neoforge."1.21.5"]
+mod.mc_compat = "[1.21.5]"
+deps.neo_loader = "21.5.98"
+deps.midnightlib = "1.9.3+1.21.5-neoforge"
+
+
 ["1.21.11"]
 mod.mc_releases = ["1.21.11"]
-
 
 [fabric."1.21.11"]
 mod.mc_compat = "1.21.11"
@@ -40,17 +66,29 @@ deps.neo_loader = "21.11.45"
 deps.midnightlib = "1.9.3+1.21.11-neoforge"
 
 
+["26.1.x"]
+mod.mc_releases = ["26.1", "26.1.1", "26.1.2"]
+
+[fabric."26.1.x"]
+mod.mc_compat = "~26.1"
+deps.fabric_api = "0.155.2+26.1.2"
+deps.midnightlib = "1.9.3+26.1-fabric"
+
+[neoforge."26.1.x"]
+mod.mc_compat = "[26.1, 26.2)"
+deps.neo_loader = "26.1.2.95"
+deps.midnightlib = "1.9.3+26.1-neoforge"
+
+
 ["26.2.x"]
 mod.mc_releases = ["26.2"]
-
 
 [fabric."26.2.x"]
 mod.mc_compat = "~26.2"
 deps.fabric_api = "0.156.0+26.2"
 deps.midnightlib = "1.9.3+26.2-fabric"
 
-
 [neoforge."26.2.x"]
 mod.mc_compat = "[26.2, 26.3)"
-deps.neo_loader = "26.2.0.43-beta"
+deps.neo_loader = "26.2.0.63"
 deps.midnightlib = "1.9.3+26.2-neoforge"

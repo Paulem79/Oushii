@@ -34,18 +34,3 @@ stonecutter parameters {
         }
     }
 }
-
-// Task to publish all versions to Modrinth
-tasks.register("publishAllToModrinth") {
-    group = "publishing"
-    description = "Publishes all mod versions to Modrinth"
-
-    dependsOn(
-        ":1.21.1-fabric:publishMavenPublicationToModrinthRepository",
-        ":1.21.1-neoforge:publishMavenPublicationToModrinthRepository",
-        ":1.21.11-fabric:publishMavenPublicationToModrinthRepository",
-        ":1.21.11-neoforge:publishMavenPublicationToModrinthRepository",
-        ":26.2.x-fabric:publishMavenPublicationToModrinthRepository",
-        ":26.2.x-neoforge:publishMavenPublicationToModrinthRepository"
-    )
-}

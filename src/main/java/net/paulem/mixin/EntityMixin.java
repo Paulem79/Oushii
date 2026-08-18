@@ -75,24 +75,34 @@ public abstract class EntityMixin {
     }
 
     private static boolean isAreaPureAir(Level level, AABB box) {
+        int minLevelY = SCUtils.getLevelMinY(level);
+        int maxLevelY = SCUtils.getLevelMaxY(level);
+        
+        // Entities yeeted above build height or into the void are guaranteed to be in pure air
+        if (box.maxY < minLevelY || box.minY >= maxLevelY) {
+            return true;
+        }
+
         int minX = Mth.floor(box.minX) >> 4;
         int maxX = Mth.floor(box.maxX) >> 4;
         int minZ = Mth.floor(box.minZ) >> 4;
         int maxZ = Mth.floor(box.maxZ) >> 4;
 
-        int minY = Math.max(SCUtils.getLevelMinY(level), Mth.floor(box.minY));
-        int maxY = Math.min(SCUtils.getLevelMaxY(level), Mth.floor(box.maxY));
+        // Clamp Y to valid block bounds (0..319) so getSectionIndex doesn't yield out-of-bounds index 24
+        int minY = Mth.clamp(Mth.floor(box.minY), minLevelY, maxLevelY - 1);
+        int maxY = Mth.clamp(Mth.floor(box.maxY), minLevelY, maxLevelY - 1);
 
         for (int cx = minX; cx <= maxX; cx++) {
             for (int cz = minZ; cz <= maxZ; cz++) {
                 LevelChunk chunk = level.getChunkSource().getChunkNow(cx, cz);
                 if (chunk == null) return false;
 
-                int minSecIdx = chunk.getSectionIndex(minY);
-                int maxSecIdx = chunk.getSectionIndex(maxY);
+                LevelChunkSection[] sections = chunk.getSections();
+                int minSecIdx = Math.max(0, chunk.getSectionIndex(minY));
+                int maxSecIdx = Math.min(sections.length - 1, chunk.getSectionIndex(maxY));
 
                 for (int secIdx = minSecIdx; secIdx <= maxSecIdx; secIdx++) {
-                    LevelChunkSection section = chunk.getSections()[secIdx];
+                    LevelChunkSection section = sections[secIdx];
                     if (section != null && !section.hasOnlyAir()) {
                         return false;
                     }
