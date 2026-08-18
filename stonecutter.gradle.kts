@@ -2,7 +2,7 @@ plugins {
     id("dev.kikugie.stonecutter")
 }
 
-stonecutter active "1.21.1-fabric"
+stonecutter active "26.2.x-fabric"
 
 // See https://stonecutter.kikugie.dev/wiki/config/params
 stonecutter parameters {
@@ -23,6 +23,7 @@ stonecutter parameters {
     constants["release"] = properties.get<String>("mod.id") != "template"
     dependencies["fapi"] = properties.getOrNull<String>("deps.fabric_api") ?: "0"
 
+
     replacements {
         string(current.parsed >= "1.21.11") {
             replace("ResourceLocation", "Identifier")
@@ -32,4 +33,19 @@ stonecutter parameters {
             replace("classTweaker v2 named", "classTweaker v2 official")
         }
     }
+}
+
+// Task to publish all versions to Modrinth
+tasks.register("publishAllToModrinth") {
+    group = "publishing"
+    description = "Publishes all mod versions to Modrinth"
+
+    dependsOn(
+        ":1.21.1-fabric:publishMavenPublicationToModrinthRepository",
+        ":1.21.1-neoforge:publishMavenPublicationToModrinthRepository",
+        ":1.21.11-fabric:publishMavenPublicationToModrinthRepository",
+        ":1.21.11-neoforge:publishMavenPublicationToModrinthRepository",
+        ":26.2.x-fabric:publishMavenPublicationToModrinthRepository",
+        ":26.2.x-neoforge:publishMavenPublicationToModrinthRepository"
+    )
 }

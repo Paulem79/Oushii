@@ -1,6 +1,7 @@
 plugins {
     id("net.neoforged.moddev") version "2.0.140"
     id("neoforge-mutex")
+    id("maven-publish")
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
@@ -61,6 +62,57 @@ java {
     toolchain {
         vendor = JvmVendorSpec.ADOPTIUM
         languageVersion = JavaLanguageVersion.of(requiredJava.majorVersion)
+    }
+}
+
+// Modrinth publishing configuration
+
+publishing {
+    repositories {
+        maven {
+            name = "Modrinth"
+            url = uri("https://api.modrinth.com/maven")
+            credentials {
+                username = "token"
+                password = findProperty("MODRINTH_TOKEN")?.toString() ?: System.getenv("MODRINTH_TOKEN") ?: ""
+            }
+        }
+    }
+
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = property("mod.group") as String
+            artifactId = property("mod.id") as String
+            version = property("mod.version") as String
+
+            from(components["java"])
+
+            pom {
+                name.set(property("mod.name") as String)
+                description.set("A Minecraft mod")
+                url.set("https://github.com/Paulem79/Oushii")
+
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("Paulem79")
+                        name.set("Paul")
+                    }
+                }
+
+                scm {
+                    url.set("https://github.com/Paulem79/Oushii")
+                    connection.set("scm:git:github.com/Paulem79/Oushii.git")
+                    developerConnection.set("scm:git:ssh:git@github.com:Paulem79/Oushii.git")
+                }
+            }
+        }
     }
 }
 

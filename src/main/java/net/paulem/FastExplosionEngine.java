@@ -24,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 //? if >1.21.2
-//import net.minecraft.world.level.ServerExplosion;
+import net.minecraft.world.level.ServerExplosion;
 
 public class FastExplosionEngine {
     private FastExplosionEngine() {
@@ -67,12 +67,12 @@ public class FastExplosionEngine {
         int maxX = (int) Math.ceil(pos.x + maxRadius);
 
         //? if >1.21.2 {
-        /*int levelMinY = level.getMinY();
-        int levelMaxY = level.getMaxY();*/
+        int levelMinY = level.getMinY();
+        int levelMaxY = level.getMaxY();
         //?} else {
-        int levelMinY = level.getMinBuildHeight();
+        /*int levelMinY = level.getMinBuildHeight();
         int levelMaxY = level.getMaxBuildHeight();
-        //?}
+        *///?}
 
         int minY = Math.max(levelMinY, (int) Math.floor(pos.y - maxRadius));
         int maxY = Math.min(levelMaxY, (int) Math.ceil(pos.y + maxRadius));
@@ -80,14 +80,14 @@ public class FastExplosionEngine {
         int maxZ = (int) Math.ceil(pos.z + maxRadius);
 
         //? if >1.21.2 {
-        /*ServerExplosion explosionContext = new ServerExplosion(
+        ServerExplosion explosionContext = new ServerExplosion(
                 level, null, null, null, pos, power, false, Explosion.BlockInteraction.DESTROY
-        );*/
+        );
         //?} else {
-        Explosion explosionContext = new Explosion(
+        /*Explosion explosionContext = new Explosion(
                 level, null, pos.x, pos.y, pos.z, power, false, Explosion.BlockInteraction.DESTROY
         );
-        //?}
+        *///?}
 
         // 1. Gestion des entités (Poussée & Dégâts)
         AABB explosionBox = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
@@ -254,10 +254,10 @@ public class FastExplosionEngine {
 
                 if (chunkModified) {
                     //? if >1.21.2 {
-                    //chunk.markUnsaved();
+                    chunk.markUnsaved();
                     //?} else {
-                    chunk.setUnsaved(true);
-                    //?}
+                    /*chunk.setUnsaved(true);
+                    *///?}
                 }
             }
         }
