@@ -4,7 +4,7 @@ plugins {
     id("net.minecraftforge.renamer") version "1.1.7"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
-    id("com.diffplug.spotless") version "8.0.0"
+    id("com.diffplug.spotless") version "8.10.0"
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
