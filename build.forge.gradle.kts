@@ -2,6 +2,7 @@ plugins {
     id("net.neoforged.moddev.legacyforge") version "2.0.144"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
+    id("com.diffplug.spotless") version "8.0.0"
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
@@ -13,6 +14,13 @@ val requiredJava = when {
     sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
     sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
     else -> JavaVersion.VERSION_1_8
+}
+
+spotless {
+    java {
+        target(rootProject.file("src/main/java/**/*.java"))
+        licenseHeaderFile(rootProject.file("HEADER"))
+    }
 }
 
 repositories {

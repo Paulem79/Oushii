@@ -2,6 +2,7 @@ plugins {
     // This plugin applies the correct loom variant based on the Minecraft version
     id("dev.kikugie.loom-back-compat")
     id("com.modrinth.minotaur") version "2.+"
+    id("com.diffplug.spotless") version "8.0.0"
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
@@ -13,6 +14,13 @@ val requiredJava: JavaVersion = when {
     sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
     sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
     else -> JavaVersion.VERSION_1_8
+}
+
+spotless {
+    java {
+        target(rootProject.file("src/main/java/**/*.java"))
+        licenseHeaderFile(rootProject.file("HEADER"))
+    }
 }
 
 // This can be used for publishing on Modrinth and Curseforge
