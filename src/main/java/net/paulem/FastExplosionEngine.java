@@ -33,6 +33,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.
         //$ if >1.21.2 'ServerExplosion;' else 'Explosion;'
         ServerExplosion;
+import net.paulem.utils.SCUtils;
 
 import java.util.List;
 
@@ -99,13 +100,8 @@ public final class FastExplosionEngine {
         final int minZ = (int) Math.floor(pos.z - maxRadius);
         final int maxZ = (int) Math.ceil(pos.z + maxRadius);
 
-        //? if >1.21.2 {
-        final int levelMinY = level.getMinY();
-        final int levelMaxY = level.getMaxY();
-        //?} else {
-        /*final int levelMinY = level.getMinBuildHeight();
-        final int levelMaxY = level.getMaxBuildHeight();
-        *///?}
+        final int levelMinY = SCUtils.getLevelMinY(level);
+        final int levelMaxY = SCUtils.getLevelMaxY(level);
 
         final int minY = Math.max(levelMinY, (int) Math.floor(pos.y - maxRadius));
         final int maxY = Math.min(levelMaxY - 1, (int) Math.ceil(pos.y + maxRadius));
@@ -115,11 +111,9 @@ public final class FastExplosionEngine {
                 level, null, null, null, pos, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
         );
         //?} else {
-        
         /*final Explosion explosionContext = new Explosion(
                 level, null, pos.x, pos.y, pos.z, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
         );
-        
         *///?}
 
         final double entityRadiusSq = (double) power * power;
