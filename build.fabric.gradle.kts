@@ -135,7 +135,7 @@ tasks.build {
 
 modrinth {
     token.set((project.findProperty("MODRINTH_TOKEN") as String?) ?: System.getenv("MODRINTH_TOKEN"))
-    changelog.set((project.findProperty("modrinth.changelog") as String?) ?: "No changelog provided.")
+    changelog.set((project.findProperty("minotaur.changelog") as String?) ?: "No changelog provided.")
     projectId.set("oushii")
     versionNumber.set(project.version.toString())
     versionType.set("release")
@@ -152,7 +152,7 @@ modrinth {
 
     syncBodyFrom = rootProject.file("README.md").readText()
 
-    debugMode = (project.findProperty("modrinth.debugMode") as String?).toBoolean()
+    debugMode = (project.findProperty("minotaur.debugMode") as String?).toBoolean()
 }
 
 tasks.modrinth.get().dependsOn(tasks.modrinthSyncBody)
