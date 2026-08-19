@@ -11,8 +11,8 @@ package net.paulem;
 public sealed interface ModLoaderAccess {
     ModLoaderAccess INSTANCE =
             /*? if fabric{*/new FabricLoaderAccess();
-    /*?} elif neoforge {*///new NeoForgeLoaderAccess();
-    /*?} elif forge *///new ForgeLoaderAccess();
+    /*?} elif neoforge {*//*new NeoForgeLoaderAccess();
+    *//*?} elif forge *///new ForgeLoaderAccess();
 
     boolean isClient();
     boolean isServer();

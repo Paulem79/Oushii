@@ -13,6 +13,7 @@ package net.paulem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.paulem.config.OushiiConfig;
 
 import static net.paulem.OushiiCommon.*;
@@ -22,7 +23,13 @@ public class OushiiNeoForge {
     public OushiiNeoForge(IEventBus modEventBus, ModContainer modContainer) {
         LOGGER.info("Hello NeoForge world!");
 
-        MidnightConfig.init("oushii", OushiiConfig.class);
+        modEventBus.addListener(this::commonSetup);
+    }
+
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            MidnightConfig.init("oushii", OushiiConfig.class);
+        });
     }
 }
 *///?}
