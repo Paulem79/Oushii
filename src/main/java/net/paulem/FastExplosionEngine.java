@@ -22,11 +22,9 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-//? if >1.21.2 {
-import net.minecraft.world.level.ServerExplosion;
-//?} else {
-/*import net.minecraft.world.level.Explosion;
-*///?}
+import net.minecraft.world.level.
+        //$ if >1.21.2 'ServerExplosion;' else 'Explosion;'
+        ServerExplosion;
 
 import java.util.List;
 
