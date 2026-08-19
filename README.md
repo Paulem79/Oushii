@@ -17,6 +17,8 @@ During a 27,000 block TNT explosion, server performance stays around 19.35 TPS c
 
 Oushii is compatible with Lithium, and should also be with other optimization mods and custom TNT mods.
 
+Note: This mod is not compatible with TNT Breaks Bedrock, at least for now.
+
 ---
 
 ## Performance Comparison (with Spark)
