@@ -3,6 +3,7 @@
   "minVersion": "0.8",
   "package": "net.paulem.mixin.client",
   "compatibilityLevel": "${java}",
+  "refmap": "main.refmap.json",
   "mixins": [
     "ClientLevelMixin"
   ],

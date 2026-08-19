@@ -1,6 +1,7 @@
 plugins {
     id("net.minecraftforge.gradle") version "7.+"
     id("net.minecraftforge.jarjar") version "0.2.3"
+    id("net.minecraftforge.renamer") version "1.1.7"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
     id("com.diffplug.spotless") version "8.0.0"
@@ -85,8 +86,11 @@ minecraft {
 
 val jarJarConfig = the<net.minecraftforge.jarjar.gradle.JarJarExtension>().register().configurationName
 
+val forgeDependency = minecraft.dependency("net.minecraftforge:forge:${sc.current.version}-${sc.properties.get<String>("deps.forge_loader")}")
+
 dependencies {
-    implementation(minecraft.dependency("net.minecraftforge:forge:${sc.current.version}-${sc.properties.get<String>("deps.forge_loader")}"))
+    implementation(forgeDependency)
+    annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
     if (hasMidnightLib) {
         val baseNotation = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib"
@@ -101,6 +105,15 @@ dependencies {
     annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.4")
     implementation("io.github.llamalad7:mixinextras-forge:0.5.4")
     add(jarJarConfig, "io.github.llamalad7:mixinextras-forge:0.5.4")
+}
+
+renamer.enableMixinRefmaps {
+    config("${project.property("mod.id")}.mixins.json")
+}
+renamer.mappings(forgeDependency.toSrg)
+
+val srgJar = renamer.classes(tasks.named<Jar>("jarJar")) {
+    mappings(renamer.mixin.generatedMappings)
 }
 
 java {
@@ -172,7 +185,7 @@ tasks {
         inputs.property("version", project.property("mod.version"))
 
         from(
-            named<Jar>("jarJar").flatMap { it.archiveFile },
+            srgJar.flatMap { it.output },
             named<Jar>("sourcesJar").flatMap { it.archiveFile }
         )
 
@@ -194,7 +207,7 @@ modrinth {
     projectId.set("oushii")
     versionNumber.set(project.version.toString())
     versionType.set("release")
-    uploadFile.set(tasks.named<Jar>("jarJar"))
+    uploadFile.set(srgJar.flatMap { it.output })
     additionalFiles = listOf(tasks.named<Jar>("sourcesJar"))
     gameVersions.addAll(sc.properties.raw("mod", "mc_releases").to<List<String>>())
     loaders.add("forge")
