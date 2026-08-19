@@ -4,8 +4,8 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*/
+ * (at your option) any later version.
+ */
 package net.paulem;
 
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -61,7 +61,8 @@ public final class FastExplosionEngine {
     public static void explode(ServerLevel level, Vec3 pos, float power) {
         if (power <= 0.0f) return;
 
-        RandomSource random = level.getRandom();
+        RandomSource random = level.getRandom // Important enter
+                ();
 
         long currentTick = level.getGameTime();
         if (currentTick != lastSoundResetTick) {
@@ -74,8 +75,8 @@ public final class FastExplosionEngine {
             level.playSound(
                     null, pos.x, pos.y, pos.z,
                     net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE
-                            //? if >1.20.4
-                            .value()
+                    //? if >1.20.4
+                    .value()
                     ,
                     net.minecraft.sounds.SoundSource.BLOCKS,
                     4.0f, (1.0f + (random.nextFloat() - random.nextFloat()) * 0.2f) * 0.7f
@@ -87,7 +88,12 @@ public final class FastExplosionEngine {
                 pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0
         );
 
+        //? if >1.19.3 {
         final BlockPos centerPos = BlockPos.containing(pos);
+         //?} else {
+        /*final BlockPos centerPos = new BlockPos(pos);
+        *///?}
+
         final boolean isSubmerged = !level.getFluidState(centerPos).isEmpty();
 
         final int seed = centerPos.hashCode();
@@ -123,7 +129,12 @@ public final class FastExplosionEngine {
         );
 
         final List<Entity> entities = level.getEntities((Entity) null, explosionBox, Entity::isAlive);
+
+        //? if >1.19.3 {
         final DamageSource damageSource = level.damageSources().explosion(null, null);
+         //?} else {
+        /*final DamageSource damageSource = DamageSource.explosion(explosionContext);
+        *///?}
 
         for (Entity entity : entities) {
             if (entity.ignoreExplosion(
@@ -325,7 +336,6 @@ public final class FastExplosionEngine {
                                     final BlockState neighborState = level.getBlockState(neighborPos);
 
                                     if (!neighborState.getFluidState().isEmpty() || neighborState.getBlock() instanceof FallingBlock) {
-                                        // Passer mutablePos au lieu de null évite le NPE dans CollectingNeighborUpdater
                                         level.neighborChanged(neighborPos, currentState.getBlock(),
                                                 //$ if >1.20.4 'null' else 'mutablePos'
                                                 null
@@ -346,9 +356,9 @@ public final class FastExplosionEngine {
                 if (chunkModified) {
                     //? if >1.21.2 {
                     chunk.markUnsaved();
-                    //?} else {
+                     //?} else {
                     /*chunk.setUnsaved(true);
-                     *///?}
+                    *///?}
                 }
             }
         }
@@ -358,9 +368,9 @@ public final class FastExplosionEngine {
 
             //? if >1.20.4 {
             final int maxStackSize = item.getDefaultMaxStackSize();
-            //?} else {
+             //?} else {
             /*final int maxStackSize = item.getMaxStackSize();
-             *///?}
+            *///?}
 
             while (remaining > 0) {
                 final int stackSize = Math.min(remaining, maxStackSize);

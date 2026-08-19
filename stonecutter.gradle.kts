@@ -24,6 +24,14 @@ stonecutter parameters {
     constants["hasMidnightLib"] = dependencies["midnightlib"] != "0"
 
     replacements {
+        string(current.parsed > "1.18.2") {
+            replace("java.util.Random", "net.minecraft.util.RandomSource")
+        }
+
+        string(current.parsed > "1.18.2") {
+            replace("Random", "RandomSource")
+        }
+
         string(current.parsed > "1.19.4") {
             replace("LootContext;", "LootParams;")
         }

@@ -1,6 +1,6 @@
 license = "GNU GPLv3"
 modLoader = "javafml"
-loaderVersion = "[45,)"
+loaderVersion = "[40,)"
 
 [[mods]]
 modId = "${id}"

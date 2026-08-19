@@ -2,11 +2,25 @@
 mod.id = "oushii"
 mod.name = "Oushii"
 mod.group = "net.paulem"
-mod.version = "1.0.0"
+mod.version = "1.0.1"
 mod.description = "A really fast explosion engine for Minecraft"
 
 deps.fabric_loader = "0.19.3"
 loomx.loom_version = "1.17-SNAPSHOT"
+
+
+["1.18.2"]
+mod.mc_releases = ["1.18.2"]
+
+[fabric."1.18.2"]
+mod.mc_compat = ">=1.18.1 <=1.18.2"
+deps.fabric_api = "0.77.0+1.18.2"
+deps.midnightlib = "0.4.4"
+
+[forge."1.18.2"]
+mod.mc_compat = "[1.18.2]"
+deps.forge_loader = "40.3.12"
+deps.midnightlib = "0"
 
 
 ["1.19.4"]

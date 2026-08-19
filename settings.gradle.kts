@@ -39,6 +39,7 @@ stonecutter {
         }
 
         // See https://stonecutter.kikugie.dev/wiki/start/#choosing-minecraft-versions
+        match("1.18.2", "fabric", "forge")
         match("1.19.4", "fabric", "forge")
         match("1.20.1", "fabric", "forge")
         match("1.20.4", "fabric")
