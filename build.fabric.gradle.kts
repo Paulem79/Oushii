@@ -121,6 +121,10 @@ tasks {
     }
 }
 
+tasks.build {
+    dependsOn("spotlessCheck")
+}
+
 modrinth {
     token.set((project.findProperty("MODRINTH_TOKEN") as String?) ?: System.getenv("MODRINTH_TOKEN"))
     changelog.set((project.findProperty("modrinth.changelog") as String?) ?: "No changelog provided.")

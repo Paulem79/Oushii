@@ -1,5 +1,14 @@
 plugins {
     id("dev.kikugie.stonecutter")
+    id("com.diffplug.spotless") version "8.0.0"
+    id("com.modrinth.minotaur") version "2.+"
+}
+
+spotless {
+    java {
+        target("src/main/java/**/*.java")
+        licenseHeaderFile(rootProject.file("HEADER"))
+    }
 }
 
 stonecutter active "26.2.x-fabric"
