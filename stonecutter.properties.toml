@@ -8,6 +8,20 @@ deps.fabric_loader = "0.19.3"
 loomx.loom_version = "1.17-SNAPSHOT"
 
 
+["1.19.4"]
+mod.mc_releases = ["1.19.4"]
+
+[fabric."1.19.4"]
+mod.mc_compat = ">=1.19.3 <=1.19.4"
+deps.fabric_api = "0.87.2+1.19.4"
+deps.midnightlib = "1.3.0-fabric"
+
+[forge."1.19.4"]
+mod.mc_compat = "[1.19.4]"
+deps.forge_loader = "45.4.0"
+deps.midnightlib = "none"
+
+
 ["1.20.1"]
 mod.mc_releases = ["1.20.1"]
 
@@ -18,7 +32,7 @@ deps.midnightlib = "1.9.3+1.20.1-fabric"
 
 [forge."1.20.1"]
 mod.mc_compat = "[1.20.1]"
-deps.forge_loader = "47.3.0"
+deps.forge_loader = "47.4.10"
 deps.midnightlib = "none"
 
 

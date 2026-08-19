@@ -6,11 +6,11 @@ import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraftforge.fml.common.Mod;
 import net.paulem.config.OushiiConfig;
 
-import static net.paulem.TemplateModCommon.*;
+import static net.paulem.OushiiCommon.*;
 
 @Mod("oushii")
-public class TemplateModForge {
-    public TemplateModForge() {
+public class OushiiForge {
+    public OushiiForge() {
         LOGGER.info("Hello Forge world!");
 
         //? if !1.20.1 || !forge {

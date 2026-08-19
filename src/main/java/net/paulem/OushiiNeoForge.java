@@ -7,11 +7,11 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.paulem.config.OushiiConfig;
 
-import static net.paulem.TemplateModCommon.*;
+import static net.paulem.OushiiCommon.*;
 
 @Mod("oushii")
-public class TemplateModNeoForge {
-    public TemplateModNeoForge(IEventBus modEventBus, ModContainer modContainer) {
+public class OushiiNeoForge {
+    public OushiiNeoForge(IEventBus modEventBus, ModContainer modContainer) {
         LOGGER.info("Hello NeoForge world!");
 
         MidnightConfig.init("oushii", OushiiConfig.class);

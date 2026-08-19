@@ -22,6 +22,14 @@ stonecutter parameters {
     dependencies["fapi"] = properties.getOrNull<String>("deps.fabric_api") ?: "0"
 
     replacements {
+        string(current.parsed > "1.19.4") {
+            replace("LootContext;", "LootParams;")
+        }
+
+        string(current.parsed > "1.19.4") {
+            replace("LootContext.", "LootParams.")
+        }
+
         string(current.parsed >= "1.21.11") {
             replace("ResourceLocation", "Identifier")
         }

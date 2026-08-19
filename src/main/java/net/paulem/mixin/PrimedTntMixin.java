@@ -27,7 +27,11 @@ public abstract class PrimedTntMixin extends Entity {
 
 	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
 	private void onTick(CallbackInfo ci) {
-		if (this.level().isClientSide()) return;
+		Level level = this.level
+				//? if >1.19.4
+				()
+				;
+		if (level.isClientSide()) return;
 
 		PrimedTnt self = (PrimedTnt) (Object) this;
 
@@ -38,13 +42,16 @@ public abstract class PrimedTntMixin extends Entity {
 		*///?}
 
 		// Skip physics for resting TNT to avoid useless ground collision ticks
-		if (self.onGround() && self.getDeltaMovement().lengthSqr() < 1.0E-4) {
+		boolean isOnGround = self
+				//$ if >1.19.4 '.onGround();' else '.isOnGround();'
+				.onGround();
+		if (isOnGround && self.getDeltaMovement().lengthSqr() < 1.0E-4) {
 			int newFuse = self.getFuse() - 1;
 			self.setFuse(newFuse);
 
 			if (newFuse <= 1) {
 				self.discard();
-				if (this.level() instanceof ServerLevel serverLevel) {
+				if (level instanceof ServerLevel serverLevel) {
 					ExplosionClusterManager.enqueue(serverLevel, self.position(), power);
 				}
 			}
@@ -55,7 +62,7 @@ public abstract class PrimedTntMixin extends Entity {
 		// Intercept detonation and hand off to cluster queue instead of running Level#explode
 		if (self.getFuse() <= 1) {
 			self.discard();
-			if (this.level() instanceof ServerLevel serverLevel) {
+			if (level instanceof ServerLevel serverLevel) {
 				ExplosionClusterManager.enqueue(serverLevel, self.position(), power);
 			}
 			ci.cancel();

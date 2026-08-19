@@ -5,9 +5,9 @@ import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ModInitializer;
 import net.paulem.config.OushiiConfig;
 
-import static net.paulem.TemplateModCommon.*;
+import static net.paulem.OushiiCommon.*;
 
-public class TemplateModFabric implements ModInitializer {
+public class OushiiFabric implements ModInitializer {
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.

@@ -16,7 +16,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.paulem.TemplateModFabric"
+      "net.paulem.OushiiFabric"
     ]
   },
   "mixins": [

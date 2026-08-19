@@ -25,7 +25,7 @@ import java.util.List;
 
 @Mixin(Entity.class)
 public abstract class EntityMixin {
-
+    //? if >1.19.4
     @Shadow public abstract Level level();
     @Shadow public abstract AABB getBoundingBox();
     @Shadow public abstract double getX();
@@ -53,8 +53,15 @@ public abstract class EntityMixin {
 
     // Bypass VoxelShape physics entirely when flying through empty chunk sections
     @Inject(method = "move", at = @At("HEAD"), cancellable = true)
-    private void fastAirMove(MoverType type, Vec3 delta, CallbackInfo ci) {
-        if (this.level().isClientSide() || !((Object) this instanceof PrimedTnt)) {
+    private void fastAirMove(MoverType moverType, Vec3 delta, CallbackInfo ci) {
+        Level level =
+                //? if >1.19.4 {
+                this.level();
+                //?} else {
+                //((Entity) (Object) this).level
+                //?}
+
+        if (level.isClientSide() || !((Object) this instanceof PrimedTnt)) {
             return;
         }
 
@@ -65,7 +72,7 @@ public abstract class EntityMixin {
 
         AABB sweptBox = this.getBoundingBox().expandTowards(delta);
 
-        if (isAreaPureAir(this.level(), sweptBox)) {
+        if (isAreaPureAir(level, sweptBox)) {
             this.setPos(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z);
             this.setOnGround(false);
             this.horizontalCollision = false;
