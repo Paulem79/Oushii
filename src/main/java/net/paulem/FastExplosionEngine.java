@@ -25,8 +25,8 @@ import net.minecraft.world.phys.Vec3;
 //? if >1.21.2 {
 import net.minecraft.world.level.ServerExplosion;
 //?} else {
-//import net.minecraft.world.level.Explosion;
-//?}
+/*import net.minecraft.world.level.Explosion;
+*///?}
 
 import java.util.List;
 
@@ -109,12 +109,12 @@ public final class FastExplosionEngine {
                 level, null, null, null, pos, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
         );
         //?} else {
-        /*
-        final Explosion explosionContext = new Explosion(
+        
+        /*final Explosion explosionContext = new Explosion(
                 level, null, pos.x, pos.y, pos.z, power, false, net.minecraft.world.level.Explosion.BlockInteraction.DESTROY
         );
-        */
-        //?}
+        
+        *///?}
 
         final double entityRadiusSq = (double) power * power;
         final AABB explosionBox = new AABB(
@@ -126,7 +126,10 @@ public final class FastExplosionEngine {
         final DamageSource damageSource = level.damageSources().explosion(null, null);
 
         for (Entity entity : entities) {
-            if (entity.ignoreExplosion(explosionContext)) continue;
+            if (entity.ignoreExplosion(
+                    //? if >1.20.1
+                    explosionContext
+            )) continue;
 
             final double distSq = entity.distanceToSqr(pos);
             if (distSq > entityRadiusSq) continue;

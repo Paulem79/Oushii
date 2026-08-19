@@ -36,7 +36,7 @@ public abstract class EntityMixin {
     @Shadow public boolean horizontalCollision;
     @Shadow public boolean verticalCollision;
 
-    // Strip TNT-vs-TNT pushing; N entities colliding creates an O(N^2) CPU nightmare
+    // Strip TNT-vs-TNT pushing; N entities colliding creates an O(N^2) CPU nightmare (bruh)
     @WrapOperation(
             method = "collide",
             at = @At(

@@ -34,8 +34,8 @@ public abstract class PrimedTntMixin extends Entity {
 		//? if >1.21.2 {
 		float power = this.explosionPower;
 		//?} else {
-		//float power = 4.0f;
-		//?}
+		/*float power = 4.0f;
+		*///?}
 
 		// Skip physics for resting TNT to avoid useless ground collision ticks
 		if (self.onGround() && self.getDeltaMovement().lengthSqr() < 1.0E-4) {

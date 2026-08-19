@@ -21,7 +21,7 @@ Oushii is compatible with Lithium, and should also be with other optimization mo
 
 ## Performance Comparison (with Spark)
 
-Tested on a superflat world with no mobs or pre-spawned item entities.
+Tested on a 26.2 superflat world with no mobs or pre-spawned item entities.
 Profiled on a detonation of a 30×30×30 TNT cube (27,000 blocks).
 
 | Metric (Spark) | Vanilla | Lithium | **Oushii** | **Lithium + Oushii** | Best vs Vanilla |

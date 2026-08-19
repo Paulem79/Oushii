@@ -1,11 +1,10 @@
 package net.paulem;
 
-// Similar to this you can implement loader-specific functionality
-// in a way that works on either mod loader.
 public sealed interface ModLoaderAccess {
     ModLoaderAccess INSTANCE =
-        /*? if fabric{*/new FabricLoaderAccess();
-        /*?} elif neoforge *///new NeoForgeLoaderAccess();
+            /*? if fabric{*/new FabricLoaderAccess();
+    /*?} elif neoforge {*///new NeoForgeLoaderAccess();
+    /*?} elif forge *///new ForgeLoaderAccess();
 
     boolean isClient();
     boolean isServer();
@@ -53,6 +52,23 @@ public sealed interface ModLoaderAccess {
         @Override
         public boolean isModLoaded(String id) {
             return mods.getModFileById(id) != null;
+        }
+    }
+    *///?} elif forge {
+    /*final class ForgeLoaderAccess implements ModLoaderAccess {
+        @Override
+        public boolean isClient() {
+            return net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient();
+        }
+
+        @Override
+        public boolean isServer() {
+            return net.minecraftforge.fml.loading.FMLEnvironment.dist.isDedicatedServer();
+        }
+
+        @Override
+        public boolean isModLoaded(String id) {
+            return net.minecraftforge.fml.ModList.get().isLoaded(id);
         }
     }
     *///?}

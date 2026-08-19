@@ -8,21 +8,18 @@ stonecutter active "26.2.x-fabric"
 stonecutter parameters {
     val (version, loader) = current.project.split('-', limit = 2)
 
-    // Makes version- and loader-specific properties apply from `stoncutter.properties.toml`
     properties {
         tags(version, loader)
     }
 
-    // Adds constants to Stonecutter comments (i.e. for `//? if fabric {...`)
     constants {
-        match(loader, "fabric", "neoforge")
+        match(loader, "fabric", "neoforge", "forge")
     }
 
     swaps["mod_version"] = "\"${properties.get<String>("mod.version")}\";"
     swaps["minecraft"] = "\"${node.metadata.version}\";"
     constants["release"] = properties.get<String>("mod.id") != "template"
     dependencies["fapi"] = properties.getOrNull<String>("deps.fabric_api") ?: "0"
-
 
     replacements {
         string(current.parsed >= "1.21.11") {

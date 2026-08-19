@@ -7,15 +7,15 @@ public class SCUtils {
         //? if >1.21.2 {
         return level.getMinY();
         //?} else {
-        //return level.getMinBuildHeight();
-        //?}
+        /*return level.getMinBuildHeight();
+        *///?}
     }
 
     public static int getLevelMaxY(Level level) {
         //? if >1.21.2 {
         return level.getMaxY();
         //?} else {
-        //return level.getMaxBuildHeight();
-        //?}
+        /*return level.getMaxBuildHeight();
+        *///?}
     }
 }

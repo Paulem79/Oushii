@@ -1,10 +1,8 @@
 plugins {
     // This plugin applies the correct loom variant based on the Minecraft version
     id("dev.kikugie.loom-back-compat")
-    id("maven-publish")
 }
 
-// DO NOT set group = ...!
 version = "${property("mod.version")}+${sc.current.version}"
 base.archivesName = "${property("mod.id") as String}-fabric"
 
@@ -21,6 +19,8 @@ val compatibleVersions: List<String> = sc.properties.rawOrNull("mod", "mc_releas
     ?.asList().orEmpty().map { it.toString() }
 
 repositories {
+    mavenCentral()
+
     /**
      * Restricts dependency search of the given [groups] to the [maven URL][url],
      * improving the setup speed.
@@ -31,28 +31,25 @@ repositories {
     }
     strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
+    strictMaven("https://maven.midnightdust.eu/releases", "MidnightLib", "eu.midnightdust")
+    strictMaven("https://maven.terraformersmc.com/", "Terraformers", "com.terraformersmc")
 }
 
 dependencies {
-    /**
-     * Fetches only the required Fabric API modules to not waste time downloading all of them for each version.
-     * @see <a href="https://github.com/FabricMC/fabric">List of Fabric API modules</a>
-     */
-    fun fapi(vararg modules: String) {
-        for (it in modules) modImplementation(fabricApi.module(it, sc.properties["deps.fabric_api"]))
-    }
-
     minecraft("com.mojang:minecraft:${sc.current.version}")
     // Applies Mojang Mappings on obfuscated versions
     loomx.applyMojangMappings()
 
     // Use `mod{dependency type}` even on 26.1+ - loom-back-compat converts them
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
-    fapi("fabric-lifecycle-events-v1", "fabric-resource-loader-v0", "fabric-content-registries-v0", "fabric-registry-sync-v0", "fabric-screen-api-v1")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${sc.properties.get<String>("deps.fabric_api")}")
 
     val midnightlibVersion = sc.properties.get<String>("deps.midnightlib")
-    modImplementation("maven.modrinth:midnightlib:${midnightlibVersion}")
-    include("maven.modrinth:midnightlib:${midnightlibVersion}")
+
+    val path = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib:$midnightlibVersion"
+    else "eu.midnightdust:midnightlib:$midnightlibVersion"
+    modImplementation(path)
+    include(path)
 }
 
 loom {
@@ -82,57 +79,6 @@ java {
     toolchain {
         vendor = JvmVendorSpec.ADOPTIUM
         languageVersion = JavaLanguageVersion.of(requiredJava.majorVersion)
-    }
-}
-
-// Modrinth publishing configuration
-
-publishing {
-    repositories {
-        maven {
-            name = "Modrinth"
-            url = uri("https://api.modrinth.com/maven")
-            credentials {
-                username = "token"
-                password = findProperty("MODRINTH_TOKEN")?.toString() ?: System.getenv("MODRINTH_TOKEN") ?: ""
-            }
-        }
-    }
-
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = property("mod.group") as String
-            artifactId = property("mod.id") as String
-            version = property("mod.version") as String
-
-            from(components["java"])
-
-            pom {
-                name.set(property("mod.name") as String)
-                description.set("A Minecraft mod")
-                url.set("https://github.com/Paulem79/Oushii")
-
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("Paulem79")
-                        name.set("Paul")
-                    }
-                }
-
-                scm {
-                    url.set("https://github.com/Paulem79/Oushii")
-                    connection.set("scm:git:github.com/Paulem79/Oushii.git")
-                    developerConnection.set("scm:git:ssh:git@github.com:Paulem79/Oushii.git")
-                }
-            }
-        }
     }
 }
 
