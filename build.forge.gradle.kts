@@ -84,7 +84,8 @@ minecraft {
     }
 }
 
-val jarJarConfig = the<net.minecraftforge.jarjar.gradle.JarJarExtension>().register().configurationName
+val jarJarExtension = the<net.minecraftforge.jarjar.gradle.JarJarExtension>()
+val jarJarConfig = jarJarExtension.register().configurationName
 
 val forgeDependency = minecraft.dependency("net.minecraftforge:forge:${sc.current.version}-${sc.properties.get<String>("deps.forge_loader")}")
 
@@ -97,7 +98,18 @@ dependencies {
         else "eu.midnightdust:midnightlib"
 
         implementation("$baseNotation:$midnightlibVersion")
-        add(jarJarConfig, "$baseNotation:$midnightlibVersion")
+        val midnightLibJarJarDep = add(jarJarConfig, "$baseNotation:$midnightlibVersion")
+
+        // MidnightLib's Gradle coordinate (e.g. "1.3.0-forge" or "1.9.2+1.20.1-forge")
+        // never matches the plain semver its own mods.toml declares (e.g. "1.3.0"/"1.9.2").
+        // ForgeGradle's JarJar plugin derives the embed version range straight from the
+        // coordinate string, so without this override the generated range never matches
+        // and Forge silently refuses to load the embedded jar.
+        if (midnightLibJarJarDep != null) {
+            jarJarExtension.configure(midnightLibJarJarDep) {
+                setRange("[${midnightlibVersion.substringBefore("+").removeSuffix("-forge")},)")
+            }
+        }
     }
 
     // MixinExtras
