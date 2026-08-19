@@ -107,6 +107,7 @@ tasks {
             register("id", "mod.id")
             register("name", "mod.name")
             register("version", "mod.version")
+            register("description", "mod.description")
             register("minecraft", "mod.mc_compat")
         }
 

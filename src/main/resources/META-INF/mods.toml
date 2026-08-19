@@ -7,12 +7,15 @@ modId = "${id}"
 displayName = "${name}"
 version = "${version}"
 authors = "Paulem"
-description = "Optimized tnt mod"
+description = "${description}"
 
 logoFile = "assets/oushii/icon.png"
 
 [[mixins]]
 config = "oushii.mixins.json"
+
+[[mixins]]
+config = "oushii.client.mixins.json"
 
 [[dependencies.${id}]]
 modId = "minecraft"

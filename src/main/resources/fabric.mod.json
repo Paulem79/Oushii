@@ -3,13 +3,13 @@
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
-  "description": "Optimized tnt mod",
+  "description": "${description}",
   "authors": [
     "Paulem"
   ],
   "contact": {
-    "homepage": "https://stonecutter.kikugie.dev/",
-    "sources": "https://codeberg.org/stonecutter/template-fabric"
+    "homepage": "https://paulem.net",
+    "sources": "https://github.com/Paulem79/Oushii"
   },
   "license": "GNU GPLv3",
   "icon": "assets/oushii/icon.png",
