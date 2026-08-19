@@ -1,6 +1,7 @@
 plugins {
     id("net.neoforged.moddev.legacyforge") version "2.0.144"
     id("neoforge-mutex")
+    id("com.modrinth.minotaur") version "2.+"
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
@@ -34,15 +35,13 @@ repositories {
     strictMaven("https://maven.terraformersmc.com/", "Terraformers", "com.terraformersmc")
 }
 
-dependencies {
-    val midnightlibVersion = sc.properties.getOrNull<String>("deps.midnightlib")
+val midnightlibVersion = sc.dependencies["midnightlib"].orEmpty()
+val hasMidnightLib = sc.constants["hasMidnightLib"] ?: false
 
-    if (midnightlibVersion != null && midnightlibVersion != "none") {
-        val path =
-            if (!midnightlibVersion.contains("+"))
-                "maven.modrinth:midnightlib:$midnightlibVersion"
-            else
-                "eu.midnightdust:midnightlib:$midnightlibVersion"
+dependencies {
+    if (hasMidnightLib) {
+        val path = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib:$midnightlibVersion"
+        else "eu.midnightdust:midnightlib:$midnightlibVersion"
 
         implementation(path)
         jarJar(path)
@@ -164,3 +163,26 @@ tasks {
         )
     }
 }
+
+modrinth {
+    token.set((project.findProperty("MODRINTH_TOKEN") as String?) ?: System.getenv("MODRINTH_TOKEN"))
+    changelog.set((project.findProperty("modrinth.changelog") as String?) ?: "No changelog provided.")
+    projectId.set("oushii")
+    versionNumber.set(project.version.toString())
+    versionType.set("release")
+    uploadFile.set(tasks.jar)
+    additionalFiles = listOf(tasks.named<Jar>("sourcesJar"))
+    gameVersions.addAll(sc.properties.raw("mod", "mc_releases").to<List<String>>())
+    loaders.add("forge")
+    dependencies {
+        if(hasMidnightLib) {
+            embedded.version("midnightlib", midnightlibVersion)
+        }
+    }
+
+    syncBodyFrom = rootProject.file("README.md").readText()
+
+    debugMode = (project.findProperty("modrinth.debugMode") as String?).toBoolean()
+}
+
+tasks.modrinth.get().dependsOn(tasks.modrinthSyncBody)

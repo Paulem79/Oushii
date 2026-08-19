@@ -1,6 +1,6 @@
 package net.paulem.config;
 
-//? if !1.20.1 || !forge {
+//? if hasMidnightLib {
 import eu.midnightdust.lib.config.MidnightConfig;
 
 public class OushiiConfig extends MidnightConfig {

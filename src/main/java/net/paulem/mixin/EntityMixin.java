@@ -58,7 +58,7 @@ public abstract class EntityMixin {
                 //? if >1.19.4 {
                 this.level();
                 //?} else {
-                //((Entity) (Object) this).level
+                //((Entity) (Object) this).level;
                 //?}
 
         if (level.isClientSide() || !((Object) this instanceof PrimedTnt)) {

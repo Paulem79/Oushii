@@ -4,18 +4,14 @@ import net.minecraft.world.level.Level;
 
 public class SCUtils {
     public static int getLevelMinY(Level level) {
-        //? if >1.21.2 {
-        return level.getMinY();
-        //?} else {
-        /*return level.getMinBuildHeight();
-        *///?}
+        return level
+                //$ if >1.21.2 '.getMinY();' else '.getMinBuildHeight();'
+                .getMinY();
     }
 
     public static int getLevelMaxY(Level level) {
-        //? if >1.21.2 {
-        return level.getMaxY();
-        //?} else {
-        /*return level.getMaxBuildHeight();
-        *///?}
+        return level
+                //$ if >1.21.2 '.getMaxY();' else '.getMaxBuildHeight();'
+                .getMinY();
     }
 }

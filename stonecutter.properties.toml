@@ -2,7 +2,7 @@
 mod.id = "oushii"
 mod.name = "Oushii"
 mod.group = "net.paulem"
-mod.version = "0.1.0"
+mod.version = "1.0.0"
 
 deps.fabric_loader = "0.19.3"
 loomx.loom_version = "1.17-SNAPSHOT"
@@ -19,7 +19,7 @@ deps.midnightlib = "1.3.0-fabric"
 [forge."1.19.4"]
 mod.mc_compat = "[1.19.4]"
 deps.forge_loader = "45.4.0"
-deps.midnightlib = "none"
+deps.midnightlib = "0"
 
 
 ["1.20.1"]
@@ -33,7 +33,16 @@ deps.midnightlib = "1.9.3+1.20.1-fabric"
 [forge."1.20.1"]
 mod.mc_compat = "[1.20.1]"
 deps.forge_loader = "47.4.10"
-deps.midnightlib = "none"
+deps.midnightlib = "0"
+
+
+["1.20.4"]
+mod.mc_releases = ["1.20.3", "1.20.4"]
+
+[fabric."1.20.4"]
+mod.mc_compat = ">=1.20.3 <=1.20.4"
+deps.fabric_api = "0.97.3+1.20.4"
+deps.midnightlib = "1.5.3-fabric"
 
 
 ["1.20.6"]

@@ -1,6 +1,7 @@
 plugins {
     // This plugin applies the correct loom variant based on the Minecraft version
     id("dev.kikugie.loom-back-compat")
+    id("com.modrinth.minotaur") version "2.+"
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
@@ -35,6 +36,9 @@ repositories {
     strictMaven("https://maven.terraformersmc.com/", "Terraformers", "com.terraformersmc")
 }
 
+val midnightlibVersion = sc.dependencies["midnightlib"].orEmpty()
+val hasMidnightLib = sc.constants["hasMidnightLib"] ?: false
+
 dependencies {
     minecraft("com.mojang:minecraft:${sc.current.version}")
     // Applies Mojang Mappings on obfuscated versions
@@ -44,12 +48,13 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${sc.properties.get<String>("deps.fabric_api")}")
 
-    val midnightlibVersion = sc.properties.get<String>("deps.midnightlib")
+    if (hasMidnightLib) {
+        val path = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib:$midnightlibVersion"
+        else "eu.midnightdust:midnightlib:$midnightlibVersion"
 
-    val path = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib:$midnightlibVersion"
-    else "eu.midnightdust:midnightlib:$midnightlibVersion"
-    modImplementation(path)
-    include(path)
+        modImplementation(path)
+        include(path)
+    }
 }
 
 loom {
@@ -115,3 +120,27 @@ tasks {
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
     }
 }
+
+modrinth {
+    token.set((project.findProperty("MODRINTH_TOKEN") as String?) ?: System.getenv("MODRINTH_TOKEN"))
+    changelog.set((project.findProperty("modrinth.changelog") as String?) ?: "No changelog provided.")
+    projectId.set("oushii")
+    versionNumber.set(project.version.toString())
+    versionType.set("release")
+    uploadFile.set(loomx.modJar)
+    additionalFiles = listOf(loomx.modSourcesJar)
+    gameVersions.addAll(sc.properties.raw("mod", "mc_releases").to<List<String>>())
+    loaders.add("fabric")
+    dependencies {
+        required.project("fabric-api")
+        if(hasMidnightLib) {
+            embedded.version("midnightlib", midnightlibVersion)
+        }
+    }
+
+    syncBodyFrom = rootProject.file("README.md").readText()
+
+    debugMode = (project.findProperty("modrinth.debugMode") as String?).toBoolean()
+}
+
+tasks.modrinth.get().dependsOn(tasks.modrinthSyncBody)

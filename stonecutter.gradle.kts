@@ -21,6 +21,9 @@ stonecutter parameters {
     constants["release"] = properties.get<String>("mod.id") != "template"
     dependencies["fapi"] = properties.getOrNull<String>("deps.fabric_api") ?: "0"
 
+    dependencies["midnightlib"] = properties.getOrNull<String>("deps.midnightlib") ?: "0"
+    constants["hasMidnightLib"] = dependencies["midnightlib"] != "0"
+
     replacements {
         string(current.parsed > "1.19.4") {
             replace("LootContext;", "LootParams;")
