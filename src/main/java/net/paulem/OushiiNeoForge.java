@@ -15,9 +15,6 @@ public class OushiiNeoForge {
         LOGGER.info("Hello NeoForge world!");
 
         MidnightConfig.init("oushii", OushiiConfig.class);
-
-        //? if !release
-        LOGGER.warn("I'm still a template!");
     }
 }
 *///?}

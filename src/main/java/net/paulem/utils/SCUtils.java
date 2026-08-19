@@ -12,6 +12,6 @@ public class SCUtils {
     public static int getLevelMaxY(Level level) {
         return level
                 //$ if >1.21.2 '.getMaxY();' else '.getMaxBuildHeight();'
-                .getMinY();
+                .getMaxY();
     }
 }

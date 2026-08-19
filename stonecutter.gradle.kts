@@ -18,7 +18,6 @@ stonecutter parameters {
 
     swaps["mod_version"] = "\"${properties.get<String>("mod.version")}\";"
     swaps["minecraft"] = "\"${node.metadata.version}\";"
-    constants["release"] = properties.get<String>("mod.id") != "template"
     dependencies["fapi"] = properties.getOrNull<String>("deps.fabric_api") ?: "0"
 
     dependencies["midnightlib"] = properties.getOrNull<String>("deps.midnightlib") ?: "0"

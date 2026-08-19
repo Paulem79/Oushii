@@ -18,9 +18,6 @@ public class OushiiForge {
         //?} else {
         /^OushiiConfig.init("oushii", OushiiConfig.class);
         ^///?}
-
-        //? if !release
-        //LOGGER.warn("I'm still a template!");
     }
 }
 *///?}

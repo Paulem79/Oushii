@@ -17,9 +17,6 @@ public class OushiiFabric implements ModInitializer {
         LOGGER.info("Hello Fabric world!");
 
         MidnightConfig.init("oushii", OushiiConfig.class);
-
-        //? if !release
-        //LOGGER.warn("I'm still a template!");
     }
 }
 //?}
