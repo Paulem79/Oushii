@@ -23,13 +23,16 @@ public class OushiiNeoForge {
     public OushiiNeoForge(IEventBus modEventBus, ModContainer modContainer) {
         LOGGER.info("Hello NeoForge world!");
 
+        //? if hasMidnightLib
         modEventBus.addListener(this::commonSetup);
     }
 
+    //? if hasMidnightLib {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             MidnightConfig.init("oushii", OushiiConfig.class);
         });
     }
+    //?}
 }
 *///?}

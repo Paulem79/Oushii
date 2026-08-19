@@ -4,8 +4,8 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*/
+ * (at your option) any later version.
+ */
 package net.paulem.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -23,7 +23,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.paulem.utils.SCUtils;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -33,16 +32,6 @@ import java.util.List;
 
 @Mixin(Entity.class)
 public abstract class EntityMixin {
-    //? if >1.19.4
-    @Shadow public abstract Level level();
-    @Shadow public abstract AABB getBoundingBox();
-    @Shadow public abstract double getX();
-    @Shadow public abstract double getY();
-    @Shadow public abstract double getZ();
-    @Shadow public abstract void setPos(double x, double y, double z);
-    @Shadow public abstract void setOnGround(boolean onGround);
-    @Shadow public boolean horizontalCollision;
-    @Shadow public boolean verticalCollision;
 
     // Strip TNT-vs-TNT pushing; N entities colliding creates an O(N^2) CPU nightmare (bruh)
     @WrapOperation(
@@ -62,14 +51,16 @@ public abstract class EntityMixin {
     // Bypass VoxelShape physics entirely when flying through empty chunk sections
     @Inject(method = "move", at = @At("HEAD"), cancellable = true)
     private void fastAirMove(MoverType moverType, Vec3 delta, CallbackInfo ci) {
+        Entity self = (Entity) (Object) this;
+
         Level level =
                 //? if >1.19.4 {
-                this.level();
-                //?} else {
-                //((Entity) (Object) this).level;
-                //?}
+                self.level();
+        //?} else {
+        /*self.level;
+         *///?}
 
-        if (level.isClientSide() || !((Object) this instanceof PrimedTnt)) {
+        if (level.isClientSide() || !(self instanceof PrimedTnt)) {
             return;
         }
 
@@ -78,13 +69,13 @@ public abstract class EntityMixin {
             return;
         }
 
-        AABB sweptBox = this.getBoundingBox().expandTowards(delta);
+        AABB sweptBox = self.getBoundingBox().expandTowards(delta);
 
         if (isAreaPureAir(level, sweptBox)) {
-            this.setPos(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z);
-            this.setOnGround(false);
-            this.horizontalCollision = false;
-            this.verticalCollision = false;
+            self.setPos(self.getX() + delta.x, self.getY() + delta.y, self.getZ() + delta.z);
+            self.setOnGround(false);
+            self.horizontalCollision = false;
+            self.verticalCollision = false;
             ci.cancel();
         }
     }
@@ -92,7 +83,7 @@ public abstract class EntityMixin {
     private static boolean isAreaPureAir(Level level, AABB box) {
         int minLevelY = SCUtils.getLevelMinY(level);
         int maxLevelY = SCUtils.getLevelMaxY(level);
-        
+
         // Entities yeeted above build height or into the void are guaranteed to be in pure air
         if (box.maxY < minLevelY || box.minY >= maxLevelY) {
             return true;

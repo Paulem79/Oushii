@@ -13,7 +13,7 @@ import eu.midnightdust.lib.config.MidnightConfig;
 
 public class OushiiConfig extends MidnightConfig {
 
-    //? if >1.18.2 {
+    //? if !legacyMidnightLib {
     @Comment(category = "client")
             //?} else {
     /*@Comment
@@ -21,7 +21,7 @@ public class OushiiConfig extends MidnightConfig {
     public static Comment clientSection;
 
     // Hard-cap on explosion particles spawned per tick
-    //? if >1.18.2 {
+    //? if !legacyMidnightLib {
     @Entry(category = "client", min = 0, max = 1000)
             //?} else {
     /*@Entry(min = 0, max = 1000)
@@ -29,14 +29,14 @@ public class OushiiConfig extends MidnightConfig {
     public static int maxExplosionParticlesPerTick = 100;
 
     // Max TNT entities rendered on screen (sorted by distance)
-    //? if >1.18.2 {
+    //? if !legacyMidnightLib {
     @Entry(category = "client", min = 0, max = 1000)
             //?} else {
     /*@Entry(min = 0, max = 1000)
      *///?}
     public static int maxRenderedTnt = 75;
 
-    //? if >1.18.2 {
+    //? if !legacyMidnightLib {
     @Comment(category = "server")
             //?} else {
     /*@Comment
@@ -44,7 +44,7 @@ public class OushiiConfig extends MidnightConfig {
     public static Comment serverSection;
 
     // Limit primed TNT spawned per explosion to prevent entity cascades
-    //? if >1.18.2 {
+    //? if !legacyMidnightLib {
     @Entry(category = "server", min = 1, max = 256)
             //?} else {
     /*@Entry(min = 1, max = 256)
@@ -52,7 +52,7 @@ public class OushiiConfig extends MidnightConfig {
     public static int maxPrimedPerExplosion = 32;
 
     // Radius in blocks within which same-tick explosions merge into one
-    //? if >1.18.2 {
+    //? if !legacyMidnightLib {
     @Entry(category = "server", min = 0.0, max = 20.0)
             //?} else {
     /*@Entry(min = 0.0, max = 20.0)

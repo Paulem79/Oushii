@@ -22,6 +22,7 @@ stonecutter parameters {
 
     dependencies["midnightlib"] = properties.getOrNull<String>("deps.midnightlib") ?: "0"
     constants["hasMidnightLib"] = dependencies["midnightlib"] != "0"
+    dependencies["midnightlib"]?.contains("+")?.let { constants["legacyMidnightLib"] = !it }
 
     replacements {
         string(current.parsed > "1.18.2") {
@@ -29,7 +30,7 @@ stonecutter parameters {
         }
 
         string(current.parsed > "1.18.2") {
-            replace("Random", "RandomSource")
+            replace("Random ", "RandomSource ")
         }
 
         string(current.parsed > "1.19.4") {

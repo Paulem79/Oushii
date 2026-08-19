@@ -1,5 +1,6 @@
 plugins {
-    id("net.neoforged.moddev.legacyforge") version "2.0.144"
+    id("net.minecraftforge.gradle") version "7.+"
+    id("net.minecraftforge.jarjar") version "0.2.3"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
     id("com.diffplug.spotless") version "8.0.0"
@@ -24,7 +25,12 @@ spotless {
 }
 
 repositories {
+    maven { minecraft.mavenizer.execute(this) }
+    maven { fg.forgeMaven.execute(this) }
+    maven { fg.minecraftLibsMaven.execute(this) }
+
     mavenCentral()
+    maven("https://repo.spongepowered.org/maven")
 
     fun strictMaven(url: String, alias: String, vararg groups: String) = exclusiveContent {
         forRepository {
@@ -46,50 +52,55 @@ repositories {
 val midnightlibVersion = sc.dependencies["midnightlib"].orEmpty()
 val hasMidnightLib = sc.constants["hasMidnightLib"] ?: false
 
-dependencies {
-    if (hasMidnightLib) {
-        val path = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib:$midnightlibVersion"
-        else "eu.midnightdust:midnightlib:$midnightlibVersion"
+minecraft {
+    mappings("official", sc.current.version)
 
-        implementation(path)
-        jarJar(path)
+    runs {
+        configureEach {
+            jvmArgs(
+                "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",
+                "--add-exports", "cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED"
+            )
+        }
+
+        create("client").apply {
+            workingDir.set(project.file("../../run"))
+            systemProperty("forge.logging.console.level", "debug")
+
+            mods.create(project.property("mod.id") as String).apply {
+                source(sourceSets.main.get())
+            }
+        }
+
+        create("server").apply {
+            workingDir.set(project.file("../../run"))
+            systemProperty("forge.logging.console.level", "debug")
+
+            mods.create(project.property("mod.id") as String).apply {
+                source(sourceSets.main.get())
+            }
+        }
     }
+}
 
-    // Mixin
-    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
+val jarJarConfig = the<net.minecraftforge.jarjar.gradle.JarJarExtension>().register().configurationName
+
+dependencies {
+    implementation(minecraft.dependency("net.minecraftforge:forge:${sc.current.version}-${sc.properties.get<String>("deps.forge_loader")}"))
+
+    if (hasMidnightLib) {
+        val baseNotation = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib"
+        else "eu.midnightdust:midnightlib"
+
+        implementation("$baseNotation:$midnightlibVersion")
+        add(jarJarConfig, "$baseNotation:$midnightlibVersion")
+    }
 
     // MixinExtras
     compileOnly("io.github.llamalad7:mixinextras-common:0.5.4")
     annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.4")
     implementation("io.github.llamalad7:mixinextras-forge:0.5.4")
-    jarJar("io.github.llamalad7:mixinextras-forge:0.5.4")
-}
-
-mixin {
-    add(sourceSets.main.get(), "${property("mod.id")}.refmap.json")
-    config("${property("mod.id")}.mixins.json")
-}
-
-legacyForge {
-    version = "${sc.current.version}-${sc.properties.get<String>("deps.forge_loader")}"
-
-    mods {
-        register("oushii") {
-            sourceSet(sourceSets.main.get())
-        }
-    }
-
-    runs {
-        register("client") {
-            gameDirectory = file("../../run/")
-            client()
-        }
-
-        register("server") {
-            gameDirectory = file("../../run/")
-            server()
-        }
-    }
+    add(jarJarConfig, "io.github.llamalad7:mixinextras-forge:0.5.4")
 }
 
 java {
@@ -150,7 +161,7 @@ tasks {
         }
     }
 
-    named("createMinecraftArtifacts") {
+    matching { it.name == "createMinecraftArtifacts" }.configureEach {
         dependsOn("stonecutterGenerate")
     }
 
@@ -161,7 +172,7 @@ tasks {
         inputs.property("version", project.property("mod.version"))
 
         from(
-            jar.flatMap { it.archiveFile },
+            named<Jar>("jarJar").flatMap { it.archiveFile },
             named<Jar>("sourcesJar").flatMap { it.archiveFile }
         )
 
@@ -183,7 +194,7 @@ modrinth {
     projectId.set("oushii")
     versionNumber.set(project.version.toString())
     versionType.set("release")
-    uploadFile.set(tasks.jar)
+    uploadFile.set(tasks.named<Jar>("jarJar"))
     additionalFiles = listOf(tasks.named<Jar>("sourcesJar"))
     gameVersions.addAll(sc.properties.raw("mod", "mc_releases").to<List<String>>())
     loaders.add("forge")

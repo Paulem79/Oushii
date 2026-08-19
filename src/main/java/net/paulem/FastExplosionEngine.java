@@ -61,8 +61,7 @@ public final class FastExplosionEngine {
     public static void explode(ServerLevel level, Vec3 pos, float power) {
         if (power <= 0.0f) return;
 
-        RandomSource random = level.getRandom // Important enter
-                ();
+        RandomSource random = level.getRandom();
 
         long currentTick = level.getGameTime();
         if (currentTick != lastSoundResetTick) {
