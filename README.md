@@ -1,15 +1,16 @@
 # Oushii
 
-An explosion engine for Minecraft that replaces vanilla raycasting with direct chunk iteration and simplified TNT physics. It handles large TNT chain explosions without stalling the server while preserving realistic crater shapes.
+An explosion engine for Minecraft that replaces vanilla raycasting with a blast field solved directly on the block grid. It handles large TNT chain explosions without stalling the server, and keeps craters shaped the way vanilla shapes them.
 
 ---
 
 ## Why Oushii?
 
-In vanilla Minecraft, large TNT detonations overload the server because the default raycasting algorithm evaluates block positions individually. Even with performance mods like Lithium, chain explosions cause significant TPS drops.
+In vanilla Minecraft, large TNT detonations overload the server because the blast is sampled with 1352 rays that each re-walk the blocks their neighbours already walked, one `getBlockState` at a time. Even with performance mods like Lithium, chain explosions cause significant TPS drops.
 
-Oushii iterates directly over loaded chunk sections in memory, skips collision checks for TNT moving through air, and applies a deterministic 3D hash to shape craters.
-During a 27,000 block TNT explosion, server performance stays around 19.35 TPS compared to 5.93 TPS on vanilla.
+Oushii solves the same energy budget on the block grid instead of along rays. Every block is visited at most once, straight out of the chunk sections in memory: it takes the energy left by the neighbours one step closer to the centre, pays for its own blast resistance, and passes on what is left. Blocks the blast cannot get through cast a shadow behind them, exactly like a ray that ran out.
+
+That keeps what makes a vanilla crater recognisable — shallow in stone, deep in dirt, stopped by obsidian and by water — while the blast that never reaches a block costs nothing to skip. Explosions going off in the same tick close to each other are merged into one, and TNT flying through empty chunk sections skips collision checks entirely.
 
 ---
 
@@ -25,6 +26,10 @@ Note: This mod is not compatible with TNT Breaks Bedrock, at least for now.
 
 Tested on a 26.2 superflat world with no mobs or pre-spawned item entities.
 Profiled on a detonation of a 30×30×30 TNT cube (27,000 blocks).
+
+> Measured on Oushii 1.0.1, before the blast field became resistance aware. The engine now
+> destroys what vanilla would destroy rather than a fixed sphere, so these figures need to be
+> taken again.
 
 | Metric (Spark) | Vanilla | Lithium | **Oushii** | **Lithium + Oushii** | Best vs Vanilla |
 | :--- | :---: | :---: | :---: | :---: | :---: |

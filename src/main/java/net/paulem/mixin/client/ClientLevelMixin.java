@@ -26,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 @Mixin(ClientLevel.class)
 public abstract class ClientLevelMixin {
@@ -69,29 +70,36 @@ public abstract class ClientLevelMixin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        Iterable<Entity> originalEntities = cir.getReturnValue();
-        List<Entity> filteredList = new ArrayList<>();
-        List<PrimedTnt> tntList = new ArrayList<>();
+        final int limit = OushiiConfig.maxRenderedTnt;
+        final Iterable<Entity> entities = cir.getReturnValue();
 
-        for (Entity entity : originalEntities) {
-            if (entity instanceof PrimedTnt tnt) {
-                tntList.add(tnt);
-            } else {
+        // This runs every frame, so the common case (no TNT storm) must not allocate anything
+        int tntCount = 0;
+        for (Entity entity : entities) {
+            if (entity instanceof PrimedTnt && ++tntCount > limit) break;
+        }
+        if (tntCount <= limit) return;
+
+        final List<Entity> filteredList = new ArrayList<>();
+        // Bounded max-heap: keeps the closest TNT without sorting the whole storm
+        final PriorityQueue<Entity> nearest = new PriorityQueue<>(
+                Math.max(1, limit),
+                // distanceToSqr avoids Math.sqrt overhead on hot render paths
+                Comparator.comparingDouble((Entity tnt) -> tnt.distanceToSqr(player)).reversed()
+        );
+
+        for (Entity entity : entities) {
+            if (!(entity instanceof PrimedTnt)) {
                 filteredList.add(entity);
+                continue;
             }
+            if (limit == 0) continue;
+
+            nearest.add(entity);
+            if (nearest.size() > limit) nearest.poll();
         }
 
-        if (tntList.size() <= OushiiConfig.maxRenderedTnt) {
-            return;
-        }
-
-        // distanceToSqr avoids Math.sqrt overhead on hot render paths
-        tntList.sort(Comparator.comparingDouble(tnt -> tnt.distanceToSqr(player)));
-
-        for (int i = 0; i < OushiiConfig.maxRenderedTnt; i++) {
-            filteredList.add(tntList.get(i));
-        }
-
+        filteredList.addAll(nearest);
         cir.setReturnValue(filteredList);
     }
 }

@@ -57,23 +57,25 @@ public abstract class PrimedTntMixin extends Entity {
 			int newFuse = self.getFuse() - 1;
 			self.setFuse(newFuse);
 
-			if (newFuse <= 1) {
-				self.discard();
-				if (level instanceof ServerLevel serverLevel) {
-					ExplosionClusterManager.enqueue(serverLevel, self.position(), power);
-				}
+			if (newFuse <= 0) {
+				detonate(self, level, power);
 			}
 			ci.cancel();
 			return;
 		}
 
-		// Intercept detonation and hand off to cluster queue instead of running Level#explode
+		// Intercept detonation and hand off to cluster queue instead of running Level#explode.
+		// Vanilla decrements first and blows up on 0, so a fuse of 1 goes off on this very tick.
 		if (self.getFuse() <= 1) {
-			self.discard();
-			if (level instanceof ServerLevel serverLevel) {
-				ExplosionClusterManager.enqueue(serverLevel, self.position(), power);
-			}
+			detonate(self, level, power);
 			ci.cancel();
+		}
+	}
+
+	private static void detonate(PrimedTnt tnt, Level level, float power) {
+		tnt.discard();
+		if (level instanceof ServerLevel serverLevel) {
+			ExplosionClusterManager.enqueue(serverLevel, tnt.getX(), tnt.getY(), tnt.getZ(), power);
 		}
 	}
 }
