@@ -139,7 +139,8 @@ modrinth {
     changelog.set((project.findProperty("minotaur.changelog") as String?) ?: "No changelog provided.")
     projectId.set("oushii")
     versionNumber.set(project.version.toString())
-    versionType.set("release")
+    // Snapshot ids carry a qualifier ("26.3-snapshot-9"), releases never do
+    versionType.set(if (sc.current.version.contains('-')) "beta" else "release")
     uploadFile.set(loomx.modJar)
     additionalFiles = listOf(loomx.modSourcesJar)
     gameVersions.addAll(sc.properties.raw("mod", "mc_releases").to<List<String>>())

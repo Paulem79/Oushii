@@ -9,15 +9,24 @@
 package net.paulem;
 
 import net.minecraft.resources.Identifier;
+
+// SLF4J only joined the Minecraft library set in 1.17, so 1.16.5 logs through Log4j directly
+//? if >1.16.5 {
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+//?} else {
+/*import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+*///?}
 
 public class OushiiCommon {
     /**This logger is used to write text to the console and the log file.
      * It is considered best practice to use your mod id as the logger's name.
      * That way, it's clear which mod wrote info, warnings, and errors.
      */
-    public static final Logger LOGGER = LoggerFactory.getLogger("oushii");
+    public static final Logger LOGGER =
+            //$ if >1.16.5 'LoggerFactory.getLogger("oushii");' else 'LogManager.getLogger("oushii");'
+            LoggerFactory.getLogger("oushii");
     public static final String VERSION = /*$ mod_version*/ "1.0.1";
     public static final String MINECRAFT = /*$ minecraft*/ "26.2";
 

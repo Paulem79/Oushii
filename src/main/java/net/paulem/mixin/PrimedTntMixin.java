@@ -12,6 +12,7 @@ package net.paulem.mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 import net.paulem.ExplosionClusterManager;
+import net.paulem.utils.SCUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -73,9 +74,10 @@ public abstract class PrimedTntMixin extends Entity {
 	}
 
 	private static void detonate(PrimedTnt tnt, Level level, float power) {
-		tnt.discard();
-		if (level instanceof ServerLevel serverLevel) {
-			ExplosionClusterManager.enqueue(serverLevel, tnt.getX(), tnt.getY(), tnt.getZ(), power);
+		SCUtils.discard(tnt);
+		// Not a pattern match: 1.16.5 compiles against Java 8
+		if (level instanceof ServerLevel) {
+			ExplosionClusterManager.enqueue((ServerLevel) level, tnt.getX(), tnt.getY(), tnt.getZ(), power);
 		}
 	}
 }

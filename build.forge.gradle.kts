@@ -153,6 +153,11 @@ tasks {
             register("version", "mod.version")
             register("description", "mod.description")
             register("minecraft", "mod.mc_compat")
+
+            // Forge's own major version differs per Minecraft version (36 on 1.16.5, 47 on 1.20.1)
+            val loaderRange = "[${sc.properties.get<String>("deps.forge_loader").substringBefore('.')},)"
+            inputs.property("loader_version", loaderRange)
+            set("loader_version", loaderRange)
         }
 
         filesMatching(

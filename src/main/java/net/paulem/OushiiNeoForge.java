@@ -9,8 +9,7 @@
 package net.paulem;
 
 //? if neoforge {
-/*import eu.midnightdust.lib.config.MidnightConfig;
-import net.neoforged.bus.api.IEventBus;
+/*import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -23,16 +22,13 @@ public class OushiiNeoForge {
     public OushiiNeoForge(IEventBus modEventBus, ModContainer modContainer) {
         LOGGER.info("Hello NeoForge world!");
 
-        //? if hasMidnightLib
         modEventBus.addListener(this::commonSetup);
     }
 
-    //? if hasMidnightLib {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            MidnightConfig.init("oushii", OushiiConfig.class);
+            OushiiConfig.init("oushii", OushiiConfig.class);
         });
     }
-    //?}
 }
 *///?}

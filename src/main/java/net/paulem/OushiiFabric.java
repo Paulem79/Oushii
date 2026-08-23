@@ -9,7 +9,6 @@
 package net.paulem;
 
 //? if fabric {
-import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ModInitializer;
 import net.paulem.config.OushiiConfig;
 
@@ -24,7 +23,7 @@ public class OushiiFabric implements ModInitializer {
 
         LOGGER.info("Hello Fabric world!");
 
-        MidnightConfig.init("oushii", OushiiConfig.class);
+        OushiiConfig.init("oushii", OushiiConfig.class);
     }
 }
 //?}

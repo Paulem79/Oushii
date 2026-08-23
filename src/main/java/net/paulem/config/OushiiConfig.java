@@ -60,66 +60,90 @@ public class OushiiConfig extends MidnightConfig {
     public static double clusterRadius = 3.0;
 }
 //?} else {
-/*import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
+/*import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import net.paulem.OushiiCommon;
 
-@Mod.EventBusSubscriber(modid = "oushii", bus = Mod.EventBusSubscriber.Bus.MOD)
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+// Standalone config for the versions MidnightLib has no build for (1.16.5, and 26.3 snapshots
+// until one ships). It reads and writes the very file MidnightLib would - config/<modid>.json,
+// one flat object - so moving between the two keeps the settings.
 public class OushiiConfig {
 
+    // Hard-cap on explosion particles spawned per tick
     public static int maxExplosionParticlesPerTick = 100;
+    // Max TNT entities rendered on screen (sorted by distance)
     public static int maxRenderedTnt = 75;
+    // Limit primed TNT spawned per explosion to prevent entity cascades
     public static int maxPrimedPerExplosion = 32;
+    // Radius in blocks within which same-tick explosions merge into one
     public static double clusterRadius = 3.0;
 
-    private static final ForgeConfigSpec CLIENT_SPEC;
-    private static final ForgeConfigSpec.IntValue MAX_EXPLOSION_PARTICLES;
-    private static final ForgeConfigSpec.IntValue MAX_RENDERED_TNT;
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private static final ForgeConfigSpec COMMON_SPEC;
-    private static final ForgeConfigSpec.IntValue MAX_PRIMED_PER_EXPLOSION;
-    private static final ForgeConfigSpec.DoubleValue CLUSTER_RADIUS;
-
-    static {
-        ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
-        clientBuilder.push("client");
-        MAX_EXPLOSION_PARTICLES = clientBuilder
-                .comment("Hard-cap on explosion particles spawned per tick")
-                .defineInRange("maxExplosionParticlesPerTick", 100, 0, 1000);
-        MAX_RENDERED_TNT = clientBuilder
-                .comment("Max TNT entities rendered on screen (sorted by distance)")
-                .defineInRange("maxRenderedTnt", 75, 0, 1000);
-        clientBuilder.pop();
-        CLIENT_SPEC = clientBuilder.build();
-
-        ForgeConfigSpec.Builder commonBuilder = new ForgeConfigSpec.Builder();
-        commonBuilder.push("server");
-        MAX_PRIMED_PER_EXPLOSION = commonBuilder
-                .comment("Limit primed TNT spawned per explosion to prevent entity cascades")
-                .defineInRange("maxPrimedPerExplosion", 32, 1, 256);
-        CLUSTER_RADIUS = commonBuilder
-                .comment("Radius in blocks within which same-tick explosions merge into one")
-                .defineInRange("clusterRadius", 3.0, 0.0, 20.0);
-        commonBuilder.pop();
-        COMMON_SPEC = commonBuilder.build();
-    }
-
+    // Signature matches MidnightConfig#init so the entrypoints read the same on every version
     public static void init(String modId, Class<?> configClass) {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC);
+        Path path = Paths.get("config", modId + ".json");
+        read(path);
+        write(path);
     }
 
-    @SubscribeEvent
-    public static void onConfigLoad(final ModConfigEvent event) {
-        if (event.getConfig().getSpec() == CLIENT_SPEC) {
-            maxExplosionParticlesPerTick = MAX_EXPLOSION_PARTICLES.get();
-            maxRenderedTnt = MAX_RENDERED_TNT.get();
-        } else if (event.getConfig().getSpec() == COMMON_SPEC) {
-            maxPrimedPerExplosion = MAX_PRIMED_PER_EXPLOSION.get();
-            clusterRadius = CLUSTER_RADIUS.get();
+    private static void read(Path path) {
+        if (!Files.isRegularFile(path)) return;
+        try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            JsonObject json = GSON.fromJson(reader, JsonObject.class);
+            if (json == null) return;
+            maxExplosionParticlesPerTick = readInt(json, "maxExplosionParticlesPerTick", maxExplosionParticlesPerTick, 0, 1000);
+            maxRenderedTnt = readInt(json, "maxRenderedTnt", maxRenderedTnt, 0, 1000);
+            maxPrimedPerExplosion = readInt(json, "maxPrimedPerExplosion", maxPrimedPerExplosion, 1, 256);
+            clusterRadius = readDouble(json, "clusterRadius", clusterRadius, 0.0, 20.0);
+        } catch (Exception e) {
+            // A config we cannot parse must not take the game down: the defaults are rewritten over it
+            OushiiCommon.LOGGER.warn("Could not read {}, falling back to the defaults", path, e);
+        }
+    }
+
+    // Values out of range are clamped rather than rejected, matching what MidnightLib's bounds do
+    private static int readInt(JsonObject json, String key, int fallback, int min, int max) {
+        if (!json.has(key)) return fallback;
+        try {
+            return Math.max(min, Math.min(max, json.get(key).getAsInt()));
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static double readDouble(JsonObject json, String key, double fallback, double min, double max) {
+        if (!json.has(key)) return fallback;
+        try {
+            return Math.max(min, Math.min(max, json.get(key).getAsDouble()));
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static void write(Path path) {
+        JsonObject json = new JsonObject();
+        json.addProperty("maxExplosionParticlesPerTick", maxExplosionParticlesPerTick);
+        json.addProperty("maxRenderedTnt", maxRenderedTnt);
+        json.addProperty("maxPrimedPerExplosion", maxPrimedPerExplosion);
+        json.addProperty("clusterRadius", clusterRadius);
+
+        try {
+            Path parent = path.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+                GSON.toJson(json, writer);
+            }
+        } catch (Exception e) {
+            OushiiCommon.LOGGER.warn("Could not write {}", path, e);
         }
     }
 }

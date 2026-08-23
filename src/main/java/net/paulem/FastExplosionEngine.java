@@ -278,8 +278,8 @@ public final class FastExplosionEngine {
         final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
         final BlockPos.MutableBlockPos neighborPos = new BlockPos.MutableBlockPos();
 
-        final var chunkSource = level.getChunkSource();
-        final var lightEngine = level.getLightEngine();
+        final net.minecraft.server.level.ServerChunkCache chunkSource = level.getChunkSource();
+        final net.minecraft.world.level.lighting.LevelLightEngine lightEngine = level.getLightEngine();
 
         LevelChunk chunk = null;
         LevelChunkSection section = null;
@@ -397,13 +397,13 @@ public final class FastExplosionEngine {
                                     continue;
                                 }
 
-                                final int sectionIndex = chunk.getSectionIndex(y);
+                                final int sectionIndex = SCUtils.getSectionIndex(chunk, y);
                                 if (sectionIndex != cachedSectionIndex) {
                                     cachedSectionIndex = sectionIndex;
                                     final LevelChunkSection[] sections = chunk.getSections();
                                     section = (sectionIndex >= 0 && sectionIndex < sections.length)
                                             ? sections[sectionIndex] : null;
-                                    sectionIsAir = section == null || section.hasOnlyAir();
+                                    sectionIsAir = SCUtils.isSectionEmpty(section);
                                 }
 
                                 // Empty sections skip the palette read entirely, which is most of an open air blast
@@ -445,7 +445,7 @@ public final class FastExplosionEngine {
 
                                 // ---- this block is destroyed ----
                                 mutablePos.set(x, y, z);
-                                final boolean hasBlockEntity = state.hasBlockEntity();
+                                final boolean hasBlockEntity = SCUtils.hasBlockEntity(state);
                                 final BlockPos blockPos = hasBlockEntity ? mutablePos.immutable() : mutablePos;
 
                                 if (brokenCount == brokenPositions.length) {

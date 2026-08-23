@@ -8,7 +8,12 @@
 */
 package net.paulem;
 
+// `sealed` needs Java 17, and 1.16.5/1.17.1 compile against 8 and 16
+//? if >1.17.1 {
 public sealed interface ModLoaderAccess {
+//?} else {
+/*public interface ModLoaderAccess {
+*///?}
     ModLoaderAccess INSTANCE =
             /*? if fabric{*/new FabricLoaderAccess();
     /*?} elif neoforge {*//*new NeoForgeLoaderAccess();

@@ -9,6 +9,30 @@ deps.fabric_loader = "0.19.3"
 loomx.loom_version = "1.17-SNAPSHOT"
 
 
+["1.16.5"]
+mod.mc_releases = ["1.16.5"]
+
+[fabric."1.16.5"]
+mod.mc_compat = "1.16.5"
+deps.fabric_api = "0.42.0+1.16"
+# MidnightLib has no 1.16 build, so the bundled JSON config is used instead
+deps.midnightlib = "0"
+
+
+["1.17.1"]
+mod.mc_releases = ["1.17.1"]
+
+[fabric."1.17.1"]
+mod.mc_compat = ">=1.17 <=1.17.1"
+deps.fabric_api = "0.46.1+1.17"
+deps.midnightlib = "0.4.4"
+
+[forge."1.17.1"]
+mod.mc_compat = "[1.17.1]"
+deps.forge_loader = "37.1.1"
+deps.midnightlib = "0"
+
+
 ["1.18.2"]
 mod.mc_releases = ["1.18.2"]
 
@@ -144,3 +168,13 @@ deps.midnightlib = "1.9.3+26.2-fabric"
 mod.mc_compat = "[26.2, 26.3)"
 deps.neo_loader = "26.2.0.64"
 deps.midnightlib = "1.9.3+26.2-neoforge"
+
+
+["26.3.x"]
+mod.mc_releases = ["26.3-snapshot-9"]
+
+[fabric."26.3.x"]
+mod.mc_compat = ">=26.3-alpha"
+deps.fabric_api = "0.158.0+26.3"
+# MidnightLib has no 26.3 build yet, so the bundled JSON config is used instead
+deps.midnightlib = "0"

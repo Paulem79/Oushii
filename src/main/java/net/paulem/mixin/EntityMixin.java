@@ -29,11 +29,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collections;
 import java.util.List;
+//? if <=1.17.1 {
+/*import java.util.function.Predicate;
+import java.util.stream.Stream;
+*///?}
 
 @Mixin(Entity.class)
 public abstract class EntityMixin {
 
     // Strip TNT-vs-TNT pushing; N entities colliding creates an O(N^2) CPU nightmare (bruh)
+    // Before 1.18 the lookup took a filter and handed back a Stream instead of a List
+    //? if >1.17.1 {
     @WrapOperation(
             method = "collide",
             at = @At(
@@ -47,6 +53,21 @@ public abstract class EntityMixin {
         }
         return original.call(level, entity, box);
     }
+    //?} else {
+    /*@WrapOperation(
+            method = "collide",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/Level;getEntityCollisions(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;)Ljava/util/stream/Stream;"
+            )
+    )
+    private Stream<VoxelShape> skipEntityCollisionsForTnt(Level level, Entity entity, AABB box, Predicate<Entity> filter, Operation<Stream<VoxelShape>> original) {
+        if ((Object) this instanceof PrimedTnt) {
+            return Stream.empty();
+        }
+        return original.call(level, entity, box, filter);
+    }
+    *///?}
 
     // Bypass VoxelShape physics entirely when flying through empty chunk sections
     @Inject(method = "move", at = @At("HEAD"), cancellable = true)
@@ -104,12 +125,11 @@ public abstract class EntityMixin {
                 if (chunk == null) return false;
 
                 LevelChunkSection[] sections = chunk.getSections();
-                int minSecIdx = Math.max(0, chunk.getSectionIndex(minY));
-                int maxSecIdx = Math.min(sections.length - 1, chunk.getSectionIndex(maxY));
+                int minSecIdx = Math.max(0, SCUtils.getSectionIndex(chunk, minY));
+                int maxSecIdx = Math.min(sections.length - 1, SCUtils.getSectionIndex(chunk, maxY));
 
                 for (int secIdx = minSecIdx; secIdx <= maxSecIdx; secIdx++) {
-                    LevelChunkSection section = sections[secIdx];
-                    if (section != null && !section.hasOnlyAir()) {
+                    if (!SCUtils.isSectionEmpty(sections[secIdx])) {
                         return false;
                     }
                 }

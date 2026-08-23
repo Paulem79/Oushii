@@ -39,6 +39,9 @@ stonecutter {
         }
 
         // See https://stonecutter.kikugie.dev/wiki/start/#choosing-minecraft-versions
+        // Forge only switched to Mojang class names in 1.17, so 1.16.5 is Fabric only
+        match("1.16.5", "fabric")
+        match("1.17.1", "fabric", "forge")
         match("1.18.2", "fabric", "forge")
         match("1.19.4", "fabric", "forge")
         match("1.20.1", "fabric", "forge")
@@ -49,6 +52,8 @@ stonecutter {
         match("1.21.11", "fabric", "neoforge")
         match("26.1.x", "fabric", "neoforge", version = "26.1")
         match("26.2.x", "fabric", "neoforge", version = "26.2")
+        // Snapshots have no NeoForge build yet, so the loader is added back once one ships
+        match("26.3.x", "fabric", version = "26.3-snapshot-9")
         vcsVersion = "26.2.x-fabric"
     }
 }
