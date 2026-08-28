@@ -113,8 +113,8 @@ dependencies {
     }
 
     // MixinExtras
-    compileOnly("io.github.llamalad7:mixinextras-common:0.5.4")
-    annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.4")
+    compileOnly("io.github.llamalad7:mixinextras-common:0.5.5")
+    annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.5")
     implementation("io.github.llamalad7:mixinextras-forge:0.5.4")
     add(jarJarConfig, "io.github.llamalad7:mixinextras-forge:0.5.4")
 }
