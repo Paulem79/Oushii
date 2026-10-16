@@ -4,8 +4,8 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*/
+ * (at your option) any later version.
+ */
 package net.paulem.utils;
 
 import net.minecraft.core.BlockPos;
@@ -20,6 +20,15 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 public class SCUtils {
     private SCUtils() {
         /* This utility class should not be instantiated */
+    }
+
+    /**
+     * Clamps an int. 26.4 dropped {@code Mth.clamp}, and {@code Math.clamp} is Java 21+,
+     * which the Java 8 nodes cannot compile, so neither covers the whole version range.
+     */
+    public static int clamp(int value, int min, int max) {
+        if (value < min) return min;
+        return value > max ? max : value;
     }
 
     /** Worlds were still pinned to {@code y = 0} before the 1.17 height changes. */

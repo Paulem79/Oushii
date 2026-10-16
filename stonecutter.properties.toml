@@ -2,7 +2,7 @@
 mod.id = "oushii"
 mod.name = "Oushii"
 mod.group = "net.paulem"
-mod.version = "1.1.0"
+mod.version = "1.2.0"
 mod.description = "A really fast explosion engine for Minecraft"
 
 deps.fabric_loader = "0.20.0"
@@ -181,3 +181,13 @@ deps.midnightlib = "1.10.0+26.3-fabric"
 mod.mc_compat = "[26.3, 26.4)"
 deps.neo_loader = "26.3.0.84"
 deps.midnightlib = "1.10.0+26.3-neoforge"
+
+
+["26.4.x"]
+mod.mc_releases = ["26.4-snapshot-4"]
+
+[fabric."26.4.x"]
+mod.mc_compat = ">=26.4-alpha"
+deps.fabric_api = "0.163.0+26.4"
+# MidnightLib has no 26.4 build yet, so the bundled JSON config is used instead
+deps.midnightlib = "0"

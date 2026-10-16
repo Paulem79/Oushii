@@ -4,7 +4,6 @@ plugins {
     // This plugin applies the correct loom variant based on the Minecraft version
     id("dev.kikugie.loom-back-compat")
     id("com.modrinth.minotaur") version "2.+"
-    id("mod-spotless")
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
@@ -116,6 +115,7 @@ modrinth {
 
 tasks.modrinth.get().dependsOn(tasks.modrinthSyncBody)
 
+// Spotless runs on the root project, where the shared sources live
 tasks.build {
-    dependsOn("spotlessCheck")
+    dependsOn(rootProject.tasks.named("spotlessCheck"))
 }

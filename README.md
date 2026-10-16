@@ -16,9 +16,25 @@ That keeps what makes a vanilla crater recognisable — shallow in stone, deep i
 
 ## Compatibility
 
-Oushii is compatible with Lithium, and should also be with other optimization mods and custom TNT mods.
+Oushii is compatible with Lithium, and should also be with other optimization mods.
 
-Note: This mod is not compatible with TNT Breaks Bedrock, at least for now.
+The blast field goes through the same hooks vanilla does, so mods that retune explosions are
+read rather than ignored:
+
+- **Blast resistance overrides** go through vanilla's explosion damage calculator, which is
+  also what NeoForge forwards to `IBlockExtension#getExplosionResistance`. Mods such as
+  **TNT Breaks Bedrock** and **TNTUtils** work. Resistance is resolved once per block state,
+  so a mod that varies it *per position* is read once and applied to that block everywhere.
+- **Blocks may veto their own destruction** (`shouldBlockExplode`) and **their own drops**
+  (`dropFromExplosion`).
+- **Modded TNT blocks chain**: every destroyed block gets its vanilla `wasExploded` reaction,
+  which is where a TNT block primes its own entity.
+- **Modded TNT entities keep their own behaviour**: Oushii only takes over the tick of vanilla
+  `PrimedTnt`, so mods that subclass it with their own explosion (Lucky TNT, Insane TNT and
+  the like) are left alone and are not accelerated.
+
+Not covered yet: Oushii detonates through its own engine instead of `Level#explode`, so mods
+that hook that call or listen for an explosion event will not see Oushii's blasts.
 
 ---
 

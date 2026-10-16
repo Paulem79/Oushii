@@ -9,6 +9,8 @@
 package net.paulem;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2FloatMap;
+import it.unimi.dsi.fastutil.objects.Reference2FloatOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -21,6 +23,7 @@ import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
@@ -28,7 +31,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -94,6 +96,15 @@ public final class FastExplosionEngine {
     private static float[] stepTable = new float[0];
     private static int stepTableRadius = -1;
     private static long[] brokenPositions = new long[4096];
+
+    /**
+     * Vanilla's own extension point for how much a block resists a blast and whether it
+     * breaks at all. Going through it is what makes mods that retune explosions work:
+     * TNT Breaks Bedrock, TNTUtils and friends override it, and on NeoForge it is also
+     * what forwards to {@code IBlockExtension#getExplosionResistance}. Reading
+     * {@code Block#getExplosionResistance()} straight off the block skips all of them.
+     */
+    private static final ExplosionDamageCalculator DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
     private static final Object2ObjectOpenHashMap<Item, PendingDrop> PENDING_DROPS = new Object2ObjectOpenHashMap<>();
 
     private static double fastNoise(int x, int y, int z, int seed) {
@@ -158,7 +169,7 @@ public final class FastExplosionEngine {
         *///?}
 
         hurtEntities(level, pos, power, explosionContext);
-        breakBlocks(level, centerPos, power, random);
+        breakBlocks(level, centerPos, power, random, explosionContext);
     }
 
     // ------------------------------------------------------------------ entities
@@ -244,7 +255,20 @@ public final class FastExplosionEngine {
 
     // ------------------------------------------------------------------ blocks
 
-    private static void breakBlocks(ServerLevel level, BlockPos centerPos, float power, RandomSource random) {
+    private static void breakBlocks(ServerLevel level, BlockPos centerPos, float power, RandomSource random,
+            //? if >1.21.2 {
+            ServerExplosion explosionContext
+            //?} else {
+            /*Explosion explosionContext
+            *///?}
+    ) {
+        // Resistance is asked of the damage calculator once per distinct BlockState rather than
+        // once per cell: the hook is far too heavy for the inner loop (it boxes a float into an
+        // Optional), and mods that retune a block's resistance key off the block, not the
+        // position. A mod that varies resistance *per position* is therefore read once and
+        // applied everywhere, which is the one thing this trades away.
+        final Reference2FloatMap<BlockState> resistanceCache = new Reference2FloatOpenHashMap<>();
+        resistanceCache.defaultReturnValue(Float.NaN);
         final double strength = power * rayCoverageScale(power);
         final int radius = Math.min(MAX_FIELD_RADIUS, Math.max(1, Mth.ceil(strength * MAX_REACH)));
         final int radiusSq = radius * radius;
@@ -412,11 +436,14 @@ public final class FastExplosionEngine {
 
                                 double cost = TRAVEL_COST;
                                 if (state != null && !state.isAir()) {
-                                    float resistance = state.getBlock().getExplosionResistance();
-                                    final FluidState fluid = state.getFluidState();
-                                    if (!fluid.isEmpty()) {
-                                        final float fluidResistance = fluid.getExplosionResistance();
-                                        if (fluidResistance > resistance) resistance = fluidResistance;
+                                    float resistance = resistanceCache.getFloat(state);
+                                    if (Float.isNaN(resistance)) {
+                                        mutablePos.set(x, y, z);
+                                        // The calculator already folds in the fluid's own resistance
+                                        resistance = DAMAGE_CALCULATOR.getBlockExplosionResistance(
+                                                explosionContext, level, mutablePos, state, state.getFluidState()
+                                        ).orElse(0.0f);
+                                        resistanceCache.put(state, resistance);
                                     }
                                     cost += resistance + MATERIAL_COST;
                                 }
@@ -448,6 +475,14 @@ public final class FastExplosionEngine {
                                 final boolean hasBlockEntity = SCUtils.hasBlockEntity(state);
                                 final BlockPos blockPos = hasBlockEntity ? mutablePos.immutable() : mutablePos;
 
+                                // Vanilla's veto hook, so protection and explosion-tuning mods can
+                                // keep a block standing. Checked before the block is recorded as
+                                // broken, because that list drives the neighbour and light pass.
+                                if (!DAMAGE_CALCULATOR.shouldBlockExplode(
+                                        explosionContext, level, blockPos, state, (float) middle)) {
+                                    continue;
+                                }
+
                                 if (brokenCount == brokenPositions.length) {
                                     brokenPositions = Arrays.copyOf(brokenPositions, brokenCount * 2);
                                 }
@@ -467,9 +502,18 @@ public final class FastExplosionEngine {
                                     continue;
                                 }
 
-                                if (dropChance >= 1.0f || random.nextFloat() < dropChance) {
+                                final Block brokenBlock = state.getBlock();
+
+                                // TntBlock and anything extending it return false here, as do plenty of
+                                // modded blocks that drop something else from their own hook
+                                final boolean mayDrop = brokenBlock.dropFromExplosion(explosionContext);
+
+                                if (mayDrop && (dropChance >= 1.0f || random.nextFloat() < dropChance)) {
                                     final BlockEntity blockEntity = hasBlockEntity ? chunk.getBlockEntity(blockPos) : null;
-                                    final List<ItemStack> drops = Block.getDrops(state, level, blockPos, blockEntity);
+                                    // 6-arg form, not the 4-arg one 26.4 dropped: no breaker and no tool matches
+                                    // what the explosion loot context would have passed anyway
+                                    final List<ItemStack> drops =
+                                            Block.getDrops(state, level, blockPos, blockEntity, null, ItemStack.EMPTY);
                                     for (int i = 0; i < drops.size(); i++) {
                                         addDrop(level, drops.get(i), x + 0.5, y + 0.5, z + 0.5);
                                     }
@@ -477,6 +521,13 @@ public final class FastExplosionEngine {
 
                                 removeBlock(chunk, blockPos, air, chunkSource, lightEngine);
                                 chunkDirty = true;
+
+                                // Hand the block its vanilla reaction to being blown up. This is a no-op
+                                // on ordinary blocks, and it is how modded TNT chains: those blocks spawn
+                                // their own primed entity from here, which the hardcoded Blocks.TNT branch
+                                // above could never do for them. Called after removal, like vanilla, so a
+                                // block that primes itself spawns into air.
+                                brokenBlock.wasExploded(level, blockPos, explosionContext);
                             }
                         }
 

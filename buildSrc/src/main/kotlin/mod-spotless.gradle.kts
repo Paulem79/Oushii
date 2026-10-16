@@ -1,17 +1,19 @@
-// Applies the license header check to the shared sources. Every loader node compiles the
-// same `src/main/java`, so the target and the header file are identical everywhere and
-// the Spotless version is pinned once, in buildSrc.
+// License header check for the shared sources.
 //
-// Wiring `build` to `spotlessCheck` is left to the loader scripts: on the NeoForge nodes
-// it races with Stonecutter rewriting `src/main/java` under a parallel build, so those
-// nodes only expose the task without running it as part of `build`.
+// This is applied to the ROOT project on purpose. `src/main/java` lives at the root, every
+// loader node compiles that same tree, and Spotless refuses targets outside the project it
+// runs in ("All target files must be within the project dir") - so a version node cannot
+// check them. Running it once at the root is also 24x less work than once per node.
 plugins {
     id("com.diffplug.spotless")
 }
 
 spotless {
     java {
-        target(rootProject.file("src/main/java/**/*.java"))
-        licenseHeaderFile(rootProject.file("HEADER"))
+        // A fileTree, not `file("src/main/java/**/*.java")`: the latter pushes the glob
+        // through File, resolving to a path containing `*` that only blows up once the
+        // task actually executes ("Illegal char <*>").
+        target(fileTree("src/main/java") { include("**/*.java") })
+        licenseHeaderFile(file("HEADER"))
     }
 }

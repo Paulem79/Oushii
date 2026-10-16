@@ -1,5 +1,6 @@
 plugins {
     id("dev.kikugie.stonecutter")
+    id("mod-spotless")
 }
 
 stonecutter active "26.3.x-fabric"

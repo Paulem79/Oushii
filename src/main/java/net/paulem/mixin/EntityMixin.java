@@ -116,8 +116,8 @@ public abstract class EntityMixin {
         int maxZ = Mth.floor(box.maxZ) >> 4;
 
         // Clamp Y to valid block bounds (0..319) so getSectionIndex doesn't yield out-of-bounds index 24
-        int minY = Mth.clamp(Mth.floor(box.minY), minLevelY, maxLevelY - 1);
-        int maxY = Mth.clamp(Mth.floor(box.maxY), minLevelY, maxLevelY - 1);
+        int minY = SCUtils.clamp(Mth.floor(box.minY), minLevelY, maxLevelY - 1);
+        int maxY = SCUtils.clamp(Mth.floor(box.maxY), minLevelY, maxLevelY - 1);
 
         for (int cx = minX; cx <= maxX; cx++) {
             for (int cz = minZ; cz <= maxZ; cz++) {

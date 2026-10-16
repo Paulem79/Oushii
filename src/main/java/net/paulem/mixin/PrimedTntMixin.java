@@ -4,8 +4,8 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*/
+ * (at your option) any later version.
+ */
 package net.paulem.mixin;
 
 //? if >1.21.2
@@ -43,6 +43,12 @@ public abstract class PrimedTntMixin extends Entity {
 		if (level.isClientSide()) return;
 
 		PrimedTnt self = (PrimedTnt) (Object) this;
+
+		// Only vanilla TNT. Mods that add their own TNT subclass PrimedTnt and put their
+		// behaviour in an overridden tick (Lucky TNT, Insane TNT and the like); cancelling
+		// tick for those would throw their explosion away and detonate a vanilla blast
+		// instead, so they are left to run their own.
+		if (self.getClass() != PrimedTnt.class) return;
 
 		//? if >1.21.2 {
 		float power = this.explosionPower;
