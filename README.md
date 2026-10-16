@@ -27,10 +27,6 @@ Note: This mod is not compatible with TNT Breaks Bedrock, at least for now.
 Tested on a 26.2 superflat world with no mobs or pre-spawned item entities.
 Profiled on a detonation of a 30×30×30 TNT cube (27,000 blocks).
 
-> Measured on Oushii 1.0.1, before the blast field became resistance aware. The engine now
-> destroys what vanilla would destroy rather than a fixed sphere, so these figures need to be
-> taken again.
-
 | Metric (Spark) | Vanilla | Lithium | **Oushii** | **Lithium + Oushii** | Best vs Vanilla |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **`PrimedTnt.tick` Execution** | `150,808 ms` | `39,940 ms` | `3,572 ms` | **`2,996 ms`** | **50.3× faster** |

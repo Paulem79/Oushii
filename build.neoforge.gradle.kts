@@ -1,52 +1,34 @@
+import net.paulem.buildscript.ModBuild
+
 plugins {
     id("net.neoforged.moddev") version "2.0.148"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
-    id("com.diffplug.spotless") version "8.10.4"
+    id("mod-spotless")
 }
 
 version = "${property("mod.version")}+${sc.current.version}"
 base.archivesName = "${property("mod.id") as String}-neoforge"
 
-val requiredJava = when {
-    sc.current.parsed >= "26.1" -> JavaVersion.VERSION_25
-    sc.current.parsed >= "1.20.5" -> JavaVersion.VERSION_21
-    sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
-    sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
-    else -> JavaVersion.VERSION_1_8
-}
+val requiredJava: JavaVersion = ModBuild.requiredJava(sc.current.version)
 
-spotless {
-    java {
-        target(rootProject.file("src/main/java/**/*.java"))
-        licenseHeaderFile(rootProject.file("HEADER"))
-    }
-}
+// Placeholders expanded into the loader metadata file (fabric.mod.json / *.mods.toml)
+val modMetadata: Map<String, String> = mapOf(
+    "id" to sc.properties.get<String>("mod.id"),
+    "name" to sc.properties.get<String>("mod.name"),
+    "version" to sc.properties.get<String>("mod.version"),
+    "description" to sc.properties.get<String>("mod.description"),
+    "minecraft" to sc.properties.get<String>("mod.mc_compat"),
+)
 
-repositories {
-    mavenCentral()
-
-    /**
-     * Restricts dependency search of the given [groups] to the [maven URL][url],
-     * improving the setup speed.
-     */
-    fun strictMaven(url: String, alias: String, vararg groups: String) = exclusiveContent {
-        forRepository { maven(url) { name = alias } }
-        filter { groups.forEach(::includeGroup) }
-    }
-    strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
-    strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
-    strictMaven("https://maven.midnightdust.eu/releases", "MidnightLib", "eu.midnightdust")
-    strictMaven("https://maven.terraformersmc.com/", "Terraformers", "com.terraformersmc")
-}
+ModBuild.repositories(repositories)
 
 val midnightlibVersion = sc.dependencies["midnightlib"].orEmpty()
 val hasMidnightLib = sc.constants["hasMidnightLib"] ?: false
 
 dependencies {
     if (hasMidnightLib) {
-        val path = if (!midnightlibVersion.contains("+")) "maven.modrinth:midnightlib:$midnightlibVersion"
-        else "eu.midnightdust:midnightlib:$midnightlibVersion"
+        val path = ModBuild.midnightLibNotation(midnightlibVersion)
 
         implementation(path)
         jarJar(path)
@@ -75,36 +57,15 @@ neoForge {
     }
 }
 
-java {
-    withSourcesJar()
-    targetCompatibility = requiredJava
-    sourceCompatibility = requiredJava
-
-    toolchain {
-        vendor = JvmVendorSpec.ADOPTIUM
-        languageVersion = JavaLanguageVersion.of(requiredJava.majorVersion)
-    }
-}
+ModBuild.configureJava(project, requiredJava)
 
 tasks {
     processResources {
-        fun MutableMap<String, String>.register(key: String, property: String) {
-            val value: String = sc.properties[property]
-            inputs.property(key, value)
-            set(key, value)
-        }
-
-        val props = buildMap {
-            register("id", "mod.id")
-            register("name", "mod.name")
-            register("version", "mod.version")
-            register("description", "mod.description")
-            register("minecraft", "mod.mc_compat")
-        }
+        val props = ModBuild.resourceProps(this, modMetadata)
 
         filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
 
-        val mixinJava = "JAVA_${requiredJava.majorVersion}"
+        val mixinJava = ModBuild.mixinCompatibility(requiredJava)
         filesMatching("*.mixins.json") { expand("java" to mixinJava) }
 
         exclude("fabric.mod.json", "META-INF/mods.toml", "*.ct", "*.classtweaker")
@@ -113,20 +74,20 @@ tasks {
     named("createMinecraftArtifacts") {
         dependsOn("stonecutterGenerate")
     }
-
-    register<Copy>("buildAndCollect") {
-        group = "build"
-        description = "Builds mod jars and copies results to `build/libs/{mod version}/`"
-
-        inputs.property("version", project.property("mod.version"))
-        from(jar.flatMap { it.archiveFile }, named<Jar>("sourcesJar").flatMap { it.archiveFile })
-        into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
-    }
 }
 
+ModBuild.registerBuildAndCollect(
+    project,
+    sc.properties["mod.version"],
+    listOf(
+        tasks.jar.flatMap { it.archiveFile },
+        tasks.named<Jar>("sourcesJar").flatMap { it.archiveFile },
+    )
+)
+
 modrinth {
-    token.set((project.findProperty("MODRINTH_TOKEN") as String?) ?: System.getenv("MODRINTH_TOKEN"))
-    changelog.set((project.findProperty("minotaur.changelog") as String?) ?: "No changelog provided.")
+    token.set(ModBuild.secret(project, "MODRINTH_TOKEN"))
+    changelog.set(ModBuild.changelog(project))
     projectId.set("oushii")
     versionNumber.set(project.version.toString())
     versionType.set("release")
@@ -142,7 +103,7 @@ modrinth {
 
     syncBodyFrom = rootProject.file("README.md").readText()
 
-    debugMode = (project.findProperty("minotaur.debugMode") as String?).toBoolean()
+    debugMode = ModBuild.debugMode(project)
 }
 
 tasks.modrinth.get().dependsOn(tasks.modrinthSyncBody)

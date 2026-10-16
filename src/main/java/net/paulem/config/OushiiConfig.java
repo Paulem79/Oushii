@@ -72,9 +72,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-// Standalone config for the versions MidnightLib has no build for (1.16.5, and 26.3 snapshots
-// until one ships). It reads and writes the very file MidnightLib would - config/<modid>.json,
-// one flat object - so moving between the two keeps the settings.
+// Standalone config for the versions MidnightLib has no build for (1.16.5, and the Forge
+// nodes before 1.19.4). It reads and writes the very file MidnightLib would -
+// config/<modid>.json, one flat object - so moving between the two keeps the settings.
 public class OushiiConfig {
 
     // Hard-cap on explosion particles spawned per tick

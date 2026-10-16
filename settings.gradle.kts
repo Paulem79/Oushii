@@ -52,9 +52,8 @@ stonecutter {
         match("1.21.11", "fabric", "neoforge")
         match("26.1.x", "fabric", "neoforge", version = "26.1")
         match("26.2.x", "fabric", "neoforge", version = "26.2")
-        // Snapshots have no NeoForge build yet, so the loader is added back once one ships
-        match("26.3.x", "fabric", version = "26.3-snapshot-9")
-        vcsVersion = "26.2.x-fabric"
+        match("26.3.x", "fabric", "neoforge", version = "26.3")
+        vcsVersion = "26.3.x-fabric"
     }
 }
 
