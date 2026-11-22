@@ -3,7 +3,7 @@ import net.paulem.buildscript.ModBuild
 plugins {
     id("net.minecraftforge.gradle") version "7.+"
     id("net.minecraftforge.jarjar") version "0.2.3"
-    id("net.minecraftforge.renamer") version "1.1.8"
+    id("net.minecraftforge.renamer") version "1.2.0"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
 }
