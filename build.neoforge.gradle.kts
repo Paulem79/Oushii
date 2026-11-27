@@ -1,7 +1,7 @@
 import net.paulem.buildscript.ModBuild
 
 plugins {
-    id("net.neoforged.moddev") version "2.0.148"
+    id("net.neoforged.moddev") version "2.0.149"
     id("neoforge-mutex")
     id("com.modrinth.minotaur") version "2.+"
 }
